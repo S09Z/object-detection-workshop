@@ -35,6 +35,20 @@ def fetch(src: dict[str, Any], dest: Path) -> Path:
             local_dir=dest,
             token=os.getenv("HF_TOKEN"),
         )
+    elif hub == "fiftyone_zoo":
+        # Downloads only the images that contain `classes` (not the full 18 GB COCO train set).
+        os.environ["FIFTYONE_DATASET_ZOO_DIR"] = str(dest.resolve())  # keep it out of ~/fiftyone
+        import fiftyone.zoo as foz
+
+        foz.download_zoo_dataset(
+            src["zoo_name"],
+            split=src["split"],
+            label_types=["detections"],
+            classes=src["classes"],
+            max_samples=src.get("max_samples"),
+            seed=src.get("seed", 42),
+            shuffle=True,
+        )
     elif hub == "kaggle":
         from kaggle.api.kaggle_api_extended import KaggleApi  # needs ~/.kaggle/kaggle.json
 

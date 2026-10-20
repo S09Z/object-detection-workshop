@@ -22,6 +22,24 @@ sources:
       4-wheeler) — 4-wheeler mixes car/pickup/van/bus/truck, so DON'T map it to "car".
       Useful for motorcycle / tuk_tuk, or as eval-only data. n<1K images.
 
+  - name: coco                # key must match `source_mappings` in thai_traffic.yaml
+    enabled: true
+    hub: fiftyone_zoo
+    zoo_name: coco-2017
+    split: train
+    classes: [car, bus, truck, motorcycle, bicycle]
+    max_samples: 3000         # images that contain at least one of `classes`; seeded shuffle
+    seed: 42
+    subdir: coco-2017/train   # FiftyOne zoo layout under the cache dir
+    format: coco
+    annotations: labels.json
+    images: data
+    license: "annotations CC-BY-4.0; images: Flickr Terms of Use (COCO does not own the copyright)"
+    commercial_ok: true       # annotations yes; image terms are the user's responsibility (docs/licenses.md)
+    notes: >
+      COCO 2017 vehicle subset. Each kept image keeps ALL its boxes (person etc. are dropped by
+      source_mappings). `truck` mixes pickups and trucks. No camera ids: stills are split per frame.
+
   - name: ua_detrac_hf_mirror
     enabled: false
     hub: huggingface

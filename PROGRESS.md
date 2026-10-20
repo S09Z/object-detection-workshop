@@ -16,11 +16,11 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 |---|---|
 | Current phase | phase-1 — Setup & harness |
 | Current sub-task | **phase-1-c**: CI on GitHub |
-| Status | `not started` <!-- not started / in progress / blocked / done --> |
+| Status | `blocked` <!-- not started / in progress / blocked / done --> |
 | Last done | phase-1-b: git, `.gitignore`, `.python-version` (3.13), `.env.example`, `.gitattributes`, pre-commit (ruff, nbstripout, data-file guard) |
 | Next up | phase-1-c → phase-1-f (RTX 5070 / WSL2) → phase-1-d (`make dvc-init`) |
 | Branch / last commit | main |
-| Blockers | none |
+| Blockers | phase-1-c Verify needs a GitHub remote: none is configured, and pushing is the user's call |
 
 ### Health check (latest `./init.sh`)
 
@@ -58,6 +58,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 - [ ] NAS path, if one exists (otherwise `~/dvc-store`), and how it is backed up (phase-1-d)
 - [ ] Number of cameras and resolution for real use (phase-2-b)
 - [ ] Confirm the 9 classes and their order (D-003, phase-2-d)
+- [ ] GitHub repo for phase-1-c: create/choose one and add it as `origin` (private or public?)
 
 ---
 
@@ -118,3 +119,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: the "lint clean" claim in earlier entries came from a different ruff version; the uv-pinned one is authoritative. Still open from the project review: split guards, download delete-before-convert, TensorRT provider options, bench minimum duration
+
+### 2026-10-20 — phase-1-c CI workflow (partial)
+- Status: partial (box not ticked)
+- Done: `.github/workflows/ci.yml` (job `lint-test`: uv sync --locked, ruff, pytest -m "not gpu")
+- Verify: not run — needs a pushed GitHub remote (`gh run list --limit 1` → completed success)
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: after the user adds `origin` and pushes, check the run; `uv sync --locked` on Linux pulls the cu130 torch wheels (large), so consider a CPU-only CI sync if it is slow

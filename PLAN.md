@@ -68,7 +68,7 @@
   - Goal: data flow ว่าภาพอยู่ที่ไหน ส่งอะไรออกนอกเครื่อง เก็บนานเท่าไร
   - Output: `docs/privacy.md` (DPIA-lite) และป้ายแจ้ง CCTV ถ้าเก็บข้อมูลเอง
   - Verify: เอกสารระบุว่าส่งออกเฉพาะ counts/boxes, ไม่มีภาพหรือป้ายทะเบียนใน git/MLflow
-- [ ] **phase-2-d** Freeze class taxonomy
+- [x] **phase-2-d** Freeze class taxonomy
   - Goal: ยืนยัน 9 class และลำดับใน `configs/data/thai_traffic.yaml` (เปลี่ยนลำดับภายหลัง checkpoint เดิมจะใช้ไม่ได้)
   - Output: `docs/labeling_guide.md` นิยามแต่ละ class พร้อมรูปตัวอย่างและกรณีกำกวม (pickup vs truck, van vs car)
   - Verify: `make test` ผ่าน (`test_every_config_mapping_points_to_a_real_class`)

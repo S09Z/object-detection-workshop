@@ -1,6 +1,6 @@
 # Labeling guide — 9 Thai traffic classes
 
-> Status: **awaiting user confirmation** (D-003 is `Proposed`). The order below is the `class_id`
+> Status: **frozen** (D-003 `Accepted`, user confirmed 2026-10-20). The order below is the `class_id`
 > order in `configs/data/thai_traffic.yaml`. Changing the order or count breaks every checkpoint.
 > Example images are not included yet: no Thai footage exists (D-016). Add 2–3 per class during
 > phase-3-d (EDA) and phase-3-f, with face/plate-free crops only (`docs/privacy.md`).

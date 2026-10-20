@@ -10,17 +10,17 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-2-d, awaiting confirmation)
+> Last updated: 2026-10-20 · by: Claude (phase-2-d)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-2 — Business framing (phase-1-f waits for the RTX 5070 PC) |
-| Current sub-task | **phase-2-d**: freeze class taxonomy |
-| Status | `blocked` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-2-c: `docs/privacy.md` (DPIA-lite); retention periods confirmed |
-| Next up | phase-2-d → phase-3-a; phase-1-f when on the 5070 PC |
+| Current sub-task | **phase-3-a**: license register |
+| Status | `not started` <!-- not started / in progress / blocked / done --> |
+| Last done | phase-2-d: taxonomy frozen (D-003 Accepted), `docs/labeling_guide.md` |
+| Next up | phase-3-a → phase-3-b; phase-1-f when on the 5070 PC |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
-| Blockers | phase-2-d: user must confirm the 9 classes and their order (D-003 is Proposed) before the box is ticked |
+| Blockers | none |
 
 ### Health check (latest `./init.sh`)
 
@@ -60,7 +60,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 - [x] Retention periods in `docs/privacy.md` confirmed (2026-10-20)
 - [ ] Data controller if real footage is collected (phase-3-f)
 - [x] Use case and 95% total / 90% per-class count accuracy confirmed (2026-10-20)
-- [ ] Confirm the 9 classes and their order (D-003, phase-2-d)
+- [x] 9 classes and their order frozen (D-003, 2026-10-20)
 - [x] GitHub repo for phase-1-c → `S09Z/object-detection-workshop`
 
 ---
@@ -194,3 +194,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: D-003 stays `Proposed` until the user confirms
 - Notes for next session: on confirmation, set D-003 to `Accepted` (status edit only), tick phase-2-d, then phase-3-a. Add example images during phase-3-d/3-f
+
+### 2026-10-20 — phase-2-d class taxonomy frozen
+- Status: done
+- Done: user confirmed the 9 classes in order (car, pickup, van, bus, truck, motorcycle, bicycle, tuk_tuk, songthaew); D-003 set to Accepted; labeling guide marked frozen
+- Verify: `make test` passes (25 passed, includes `test_every_config_mapping_points_to_a_real_class`)
+- MLflow run / DVC rev: n/a
+- Decisions: D-003 Accepted
+- Notes for next session: class order is now fixed; any change breaks every checkpoint and needs a new decision plus user approval

@@ -45,7 +45,7 @@ The 5070 can also run `make bench`, but if the deployment device is a Jetson, th
 - `PROGRESS.md`: current state snapshot (overwritten) + append-only session log
 - `DECISIONS.md`: decision records (`D-001` …), the *why* behind choices
 - `init.sh`: start-of-session check (sync, lint, tests, next sub-task)
-
+3313
 Typical prompt: *"Do phase-3-c"* or *"Continue with the next sub-task in PLAN.md."*
 
 ## Project layout

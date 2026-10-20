@@ -10,17 +10,17 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-2-c)
+> Last updated: 2026-10-20 · by: Claude (phase-2-d, awaiting confirmation)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-2 — Business framing (phase-1-f waits for the RTX 5070 PC) |
 | Current sub-task | **phase-2-d**: freeze class taxonomy |
-| Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-2-c: `docs/privacy.md` (DPIA-lite) |
+| Status | `blocked` <!-- not started / in progress / blocked / done --> |
+| Last done | phase-2-c: `docs/privacy.md` (DPIA-lite); retention periods confirmed |
 | Next up | phase-2-d → phase-3-a; phase-1-f when on the 5070 PC |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
-| Blockers | none |
+| Blockers | phase-2-d: user must confirm the 9 classes and their order (D-003 is Proposed) before the box is ticked |
 
 ### Health check (latest `./init.sh`)
 
@@ -57,7 +57,8 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 - [x] Thai footage → none yet, use public clips (D-016)
 - [ ] NAS path, if one exists (otherwise `~/dvc-store`), and how it is backed up (phase-1-d)
 - [x] 1 camera, 1080p (confirmed 2026-10-20)
-- [ ] Confirm retention periods marked PROPOSED in `docs/privacy.md`, and who the data controller is if real footage is collected
+- [x] Retention periods in `docs/privacy.md` confirmed (2026-10-20)
+- [ ] Data controller if real footage is collected (phase-3-f)
 - [x] Use case and 95% total / 90% per-class count accuracy confirmed (2026-10-20)
 - [ ] Confirm the 9 classes and their order (D-003, phase-2-d)
 - [x] GitHub repo for phase-1-c → `S09Z/object-detection-workshop`
@@ -185,3 +186,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none (follows D-011)
 - Notes for next session: retention periods are proposals; the unauthenticated `/detect` endpoint is listed as an open risk for phase-7-a
+
+### 2026-10-20 — phase-2-d class taxonomy (partial)
+- Status: partial (box not ticked)
+- Done: `docs/labeling_guide.md` with rules per box, a definition table for the 9 classes in `thai_traffic.yaml` order, ambiguous-case rules (pickup vs truck, van vs car, songthaew); no example images yet because no Thai footage exists (D-016)
+- Verify: `make test` passes (25 passed, includes `test_every_config_mapping_points_to_a_real_class`); the taxonomy itself still needs the user's yes
+- MLflow run / DVC rev: n/a
+- Decisions: D-003 stays `Proposed` until the user confirms
+- Notes for next session: on confirmation, set D-003 to `Accepted` (status edit only), tick phase-2-d, then phase-3-a. Add example images during phase-3-d/3-f

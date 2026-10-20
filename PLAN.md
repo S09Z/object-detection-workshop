@@ -40,7 +40,7 @@
 - [x] **phase-1-c** CI บน GitHub
   - Goal: push ขึ้น GitHub แล้ว job `lint-test` เขียว
   - Verify: `gh run list --limit 1` แสดง `completed success`
-- [ ] **phase-1-d** DVC + remote storage
+- [x] **phase-1-d** DVC + remote storage
   - Goal: `make dvc-init` ให้ remote อยู่บน local disk หรือ NAS (D-015) โดย default คือ `~/dvc-store` ส่วน NAS ให้ใช้ `DVC_REMOTE=/mnt/nas/...`
   - Output: `.dvc/config` (commit) ส่วน path เฉพาะเครื่องอยู่ใน `.dvc/config.local` (ไม่ commit) และมีแผน backup ของ disk/NAS
   - Verify: `uv run dvc remote list` แสดง `storage` และ `uv run dvc push` ไฟล์ทดสอบ 1 ไฟล์แล้วเห็นใน remote

@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-2-b)
+> Last updated: 2026-10-20 · by: Claude (phase-2-c)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-2 — Business framing (phase-1-f waits for the RTX 5070 PC) |
-| Current sub-task | **phase-2-c**: privacy (PDPA) short DPIA |
+| Current sub-task | **phase-2-d**: freeze class taxonomy |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-2-b: latency budget in `docs/problem.md` (15.5 ms of 16.7 ms) |
-| Next up | phase-2-c → phase-2-d; phase-1-f when on the 5070 PC |
+| Last done | phase-2-c: `docs/privacy.md` (DPIA-lite) |
+| Next up | phase-2-d → phase-3-a; phase-1-f when on the 5070 PC |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -56,7 +56,8 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 - [x] DVC remote → local disk / NAS (D-015)
 - [x] Thai footage → none yet, use public clips (D-016)
 - [ ] NAS path, if one exists (otherwise `~/dvc-store`), and how it is backed up (phase-1-d)
-- [ ] Number of cameras and resolution for real use (budget assumes 1 camera, 1080p@30)
+- [x] 1 camera, 1080p (confirmed 2026-10-20)
+- [ ] Confirm retention periods marked PROPOSED in `docs/privacy.md`, and who the data controller is if real footage is collected
 - [x] Use case and 95% total / 90% per-class count accuracy confirmed (2026-10-20)
 - [ ] Confirm the 9 classes and their order (D-003, phase-2-d)
 - [x] GitHub repo for phase-1-c → `S09Z/object-detection-workshop`
@@ -176,3 +177,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: budget numbers are targets, to be measured in phase-6-b. phase-6-a will use model-only ≤ 4.0 ms (50% of the 8.0 ms model row). If real use has several cameras, redo the budget
+
+### 2026-10-20 — phase-2-c privacy (PDPA) DPIA-lite
+- Status: done
+- Done: `docs/privacy.md`: data inventory, data flow, where images must not appear (git / MLflow / logs / notebooks / demo video) with the enforcing mechanism, retention (PROPOSED), CCTV notice, risks; camera setup (1 camera, 1080p) confirmed in `docs/problem.md`
+- Verify: the document states that only counts/boxes leave the device and that no images or plates go into git or MLflow (sections "Data flow" and "Where images must not appear")
+- MLflow run / DVC rev: n/a
+- Decisions: none (follows D-011)
+- Notes for next session: retention periods are proposals; the unauthenticated `/detect` endpoint is listed as an open risk for phase-7-a

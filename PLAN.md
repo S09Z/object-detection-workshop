@@ -64,7 +64,7 @@
   - Goal: อุปกรณ์คือ **RTX 5070 PC (WSL2)** (D-014) ให้ระบุจำนวนกล้อง ความละเอียด (เช่น 1080p@30) และว่ารันพร้อมกับงาน train หรือไม่
   - Output: ตาราง budget ใน `docs/problem.md`: decode / detect / track / อื่นๆ รวม ≤ 16.7 ms
   - Verify: ผลรวม budget ≤ 16.7 ms และ bench ต้องวัดตอนที่ไม่มี training รันอยู่บนเครื่องเดียวกัน
-- [ ] **phase-2-c** Privacy (PDPA) แบบย่อ
+- [x] **phase-2-c** Privacy (PDPA) แบบย่อ
   - Goal: data flow ว่าภาพอยู่ที่ไหน ส่งอะไรออกนอกเครื่อง เก็บนานเท่าไร
   - Output: `docs/privacy.md` (DPIA-lite) และป้ายแจ้ง CCTV ถ้าเก็บข้อมูลเอง
   - Verify: เอกสารระบุว่าส่งออกเฉพาะ counts/boxes, ไม่มีภาพหรือป้ายทะเบียนใน git/MLflow

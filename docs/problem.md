@@ -51,13 +51,12 @@ The model is accepted for the demo when **all** hold on the target device:
 
 ## Open questions for the user
 
-- Number of cameras and resolution in real use (the budget below assumes 1 camera, 1080p).
 - Confirm the 0.15 mAP slice gap in acceptance threshold 3.
 
 ## Target hardware and latency budget (phase-2-b)
 
 Device: RTX 5070 12 GB PC under WSL2 Ubuntu (D-014). Input: **1 camera, 1920×1080, 30 FPS source**
-(`ASSUMPTION`: camera count and resolution not yet given). The bench decodes a recorded file as fast
+(confirmed by the user, 2026-10-20). The bench decodes a recorded file as fast
 as the pipeline allows, so the 60 FPS gate is a 2× headroom over the 30 FPS live stream, and leaves
 room for a second camera later.
 

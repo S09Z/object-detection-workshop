@@ -68,7 +68,7 @@ dvc.yaml            pipeline: prepare → train → export → evaluate → benc
 | Data | `make prepare` | `data/processed/coco`, `reports/data_stats.json` |
 | Train | `make train` | `runs/…/checkpoint_best_total.pth`, MLflow run |
 | Resume | `make train-resume TRAIN_CONFIG=...` | continues from `last.ckpt` |
-| Experiments | `make mlflow` | UI at http://localhost:5000 |
+| Experiments | `make mlflow` | UI at http://localhost:5001 |
 | Register | `make register RUN_ID=<id>` | MLflow Model Registry version, alias `candidate` |
 | Export | `make export` | `models/export/*.onnx` (or TensorRT engine **built on the device**) |
 | Evaluate | `make eval` | `reports/eval.json` (mAP, per-class AP, per-condition mAP) |

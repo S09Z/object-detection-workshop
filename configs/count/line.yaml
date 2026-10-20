@@ -1,0 +1,10 @@
+model_path: models/export/inference_model.onnx
+video: data/samples/intersection.mp4
+output_video: reports/count_demo.mp4
+num_classes: 9
+threshold: 0.4
+# Counting line in pixel coords of the source video
+line_start: [100, 500]
+line_end: [1180, 500]
+minimum_crossing_threshold: 2    # frames on the new side before a crossing counts (filters jitter)
+report_path: reports/counts.json

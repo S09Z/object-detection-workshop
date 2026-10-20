@@ -1,0 +1,59 @@
+# Dataset sources for `vd-download`. Downloading != training: a source is only used for
+# training after you add it to `source_mappings` in thai_traffic.yaml (after EDA, phase-3-d).
+#
+# Licence rule (D-010): the tag an uploader puts on a HF/Kaggle mirror does NOT override the
+# original dataset's licence. Record both in docs/licenses.md. commercial_ok: false -> learning only.
+raw_dir: data/raw
+
+sources:
+  - name: visaitech_mixed
+    enabled: true
+    hub: huggingface
+    repo_id: visaitech/vehicle-mixed-traffic-detection
+    revision: null            # pin to a commit SHA once chosen (reproducibility)
+    allow_patterns: ["images/**", "labels/**", "data.yaml", "classes.txt", "README.md"]
+    format: yolo
+    splits: [train, val]
+    camera_id_regex: "(V\\d{3})"   # frames come from videos V001..V005 — verify file names after download
+    license: CC-BY-4.0
+    commercial_ok: true       # attribution required
+    notes: >
+      South-Asian mixed traffic, dashcam. Coarse classes (pedestrian, 2-wheeler, 3-wheeler,
+      4-wheeler) — 4-wheeler mixes car/pickup/van/bus/truck, so DON'T map it to "car".
+      Useful for motorcycle / tuk_tuk, or as eval-only data. n<1K images.
+
+  - name: ua_detrac_hf_mirror
+    enabled: false
+    hub: huggingface
+    repo_id: abhineet123/ua_detrac
+    revision: null
+    format: coco              # verify layout after the first download, then fix format/annotations
+    annotations: annotations.json
+    images: images
+    license: "mirror tag CC-BY-4.0; ORIGINAL UA-DETRAC terms unverified"
+    commercial_ok: false      # treat as research-only until the original licence is confirmed
+    notes: Fixed traffic cameras (China), car/bus/van/others. Learning + benchmarking only.
+
+  - name: roboflow_thai
+    enabled: false
+    hub: roboflow
+    workspace: CHANGE_ME      # from the Roboflow Universe URL
+    project: CHANGE_ME
+    version: 1
+    format: coco
+    subdir: train             # Roboflow COCO export: train/_annotations.coco.json
+    annotations: _annotations.coco.json
+    images: .
+    license: CC-BY-4.0
+    commercial_ok: true
+    notes: Thai classes (Songthaew, Taxi, Pickup, Motorcycle). Tiny (~59 images).
+
+  - name: kaggle_example
+    enabled: false
+    hub: kaggle
+    dataset: OWNER/DATASET-SLUG   # e.g. from kaggle.com/datasets/<owner>/<slug>
+    format: yolo
+    subdir: ""
+    splits: [train, val]
+    license: CHECK_ON_KAGGLE      # Kaggle shows it on the dataset page — copy it exactly
+    commercial_ok: false

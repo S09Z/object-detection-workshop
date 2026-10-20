@@ -1,0 +1,120 @@
+[project]
+name = "vehicle-detect"
+version = "0.1.0"
+description = "Real-time vehicle detection & classification (>=60 FPS end-to-end) — workshop template"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "rfdetr>=1.11",            # Apache-2.0 detector (Nano/Small/Medium) — default for commercial use
+    "supervision>=0.31",       # datasets, metrics (mAP), LineZone counting, annotators
+    "trackers>=2.6",           # ByteTrack / BoT-SORT / OC-SORT
+    "onnx>=1.23",
+    "onnxruntime>=1.31; sys_platform == 'darwin'",
+    "onnxruntime-gpu>=1.31; sys_platform == 'linux'",
+    "opencv-python-headless>=4.10",
+    "mlflow>=3.17",
+    "pyyaml>=6.0",
+    "numpy>=2.0",
+    "torch>=2.8",
+    "torchvision>=0.23",
+]
+
+[project.optional-dependencies]
+# Optional: Ultralytics YOLO26 baseline. NOTE: AGPL-3.0 — closed commercial use needs an Enterprise license.
+yolo = ["ultralytics>=8.4"]
+serve = ["fastapi>=0.115", "uvicorn[standard]>=0.32", "python-multipart>=0.0.20"]
+monitor = ["evidently>=0.7", "prometheus-client>=0.21"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17",
+    "pytest>=9.0",
+    "pre-commit>=4.7",
+    "nbstripout>=0.9",
+    "jupyterlab>=4.4",
+    "ipykernel>=6.29",
+    "pandas>=2.2",
+    "matplotlib>=3.9",
+]
+data = [
+    "dvc>=3.67",
+    "fiftyone>=1.22",          # dataset QA, label-error finding, eval by slice
+    "huggingface-hub>=2.2",    # vd-download: HF datasets
+    "kaggle>=2.2",             # vd-download: Kaggle (needs ~/.kaggle/kaggle.json)
+]
+
+[project.scripts]
+vd-download = "vehicle_detect.data.download:main"
+vd-prepare = "vehicle_detect.data.prepare:main"
+vd-train = "vehicle_detect.train:main"
+vd-evaluate = "vehicle_detect.evaluate:main"
+vd-export = "vehicle_detect.export:main"
+vd-bench = "vehicle_detect.benchmark:main"
+vd-count = "vehicle_detect.tracking:main"
+vd-gpu-check = "vehicle_detect.gpu_check:main"
+vd-register = "vehicle_detect.register:main"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vehicle_detect"]
+
+# ---------------------------------------------------------------------------
+# uv: PyTorch CUDA 13 wheels on Linux (RTX 5070 via WSL2/Ubuntu, GPU servers),
+# default PyPI wheels on macOS (Apple Silicon uses MPS).
+# cu130 covers Turing -> Blackwell (RTX 50xx = sm_120). PyTorch 2.14 dropped cu128/cu129.
+# Needs NVIDIA driver >= 580 (check: nvidia-smi). See DECISIONS.md D-013.
+# Jetson does NOT use this index — it uses JetPack's own PyTorch/TensorRT.
+# ---------------------------------------------------------------------------
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu130", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cu130", marker = "sys_platform == 'linux'" }]
+
+[tool.uv]
+default-groups = ["dev"]
+# Only resolve for the platforms we use (Mac laptop + Linux GPU/Jetson-class boxes)
+environments = ["sys_platform == 'darwin'", "sys_platform == 'linux'"]
+# evidently 0.7 pins plotly<6, fiftyone 1.22 needs plotly>=6 -> keep them in separate envs.
+# Monitoring runs in the serving/monitoring service, FiftyOne on the dev machine.
+conflicts = [[{ extra = "monitor" }, { group = "data" }]]
+
+# ---------------------------------------------------------------------------
+# ruff: lint + format for src/, tests/ and notebooks
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-include = ["*.ipynb"]
+extend-exclude = ["data", "models", "runs", "mlruns"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "UP",       # pyupgrade
+    "B",        # bugbear
+    "SIM",      # simplify
+    "NPY",      # numpy
+    "PTH",      # prefer pathlib
+    "RUF",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"notebooks/*" = ["E402", "F401", "B018"]  # mid-file imports, exploratory expressions
+"tests/*" = ["S101"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["gpu: needs an NVIDIA GPU + TensorRT (run on self-hosted runner)"]

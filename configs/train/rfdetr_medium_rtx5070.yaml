@@ -1,0 +1,31 @@
+# RF-DETR Medium on RTX 5070 12 GB — tighter memory, keep effective batch 16.
+# Run:  make train TRAIN_CONFIG=configs/train/rfdetr_medium_rtx5070.yaml
+model: medium
+dataset_dir: data/processed/coco
+output_dir: runs/rfdetr_medium_rtx5070
+epochs: 50
+batch_size: 2
+grad_accum_steps: 8
+lr: 1.0e-4
+early_stopping: true
+early_stopping_patience: 10
+checkpoint_interval: 10
+
+# checkpoint & reproducibility practice (D-017)
+seed: 42
+best_model_metric: map          # val mAP50-95 picks checkpoint_best_total.pth (+ early stopping)
+run_test: true                  # evaluate best checkpoint on the held-out test split
+keep_last_checkpoints: 2        # interval archives kept; best_* and last.ckpt are never pruned
+log_checkpoint_artifact: true   # copy best checkpoint into the MLflow run (needed for the registry)
+
+train_kwargs:
+  amp_dtype: bf16
+  num_workers: 8
+  eval_batch_size: 4
+
+model_kwargs:
+  gradient_checkpointing: true
+
+mlflow:
+  experiment: vehicle-detect
+  run_name: rfdetr-medium-rtx5070

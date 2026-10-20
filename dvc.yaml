@@ -1,0 +1,63 @@
+# Reproducible pipeline:  uv run dvc repro      (only re-runs stages whose inputs changed)
+# Track raw data first:   uv run dvc add data/raw && git add data/raw.dvc
+stages:
+  prepare:
+    cmd: uv run vd-prepare --config configs/data/thai_traffic.yaml
+    deps:
+      - src/vehicle_detect/data
+      - data/raw
+    params:
+      - configs/data/thai_traffic.yaml:
+          - classes
+          - source_mappings
+          - split
+    outs:
+      - data/processed/coco
+    metrics:
+      - reports/data_stats.json:
+          cache: false
+
+  train:
+    cmd: uv run vd-train --config configs/train/rfdetr_small_rtx5070.yaml
+    deps:
+      - src/vehicle_detect/train.py
+      - src/vehicle_detect/models.py
+      - data/processed/coco
+    params:
+      - configs/train/rfdetr_small_rtx5070.yaml:
+    outs:
+      - runs/rfdetr_small_rtx5070/checkpoint_best_total.pth
+
+  export:
+    cmd: uv run vd-export --config configs/export/trt_fp16.yaml
+    deps:
+      - src/vehicle_detect/export.py
+      - runs/rfdetr_small_rtx5070/checkpoint_best_total.pth
+    params:
+      - configs/export/trt_fp16.yaml:
+    outs:
+      - models/export
+
+  evaluate:
+    cmd: uv run vd-evaluate --config configs/bench/realtime.yaml
+    deps:
+      - src/vehicle_detect/evaluate.py
+      - src/vehicle_detect/inference.py
+      - models/export
+      - data/processed/coco/test
+    metrics:
+      - reports/eval.json:
+          cache: false
+
+  bench:
+    # Run on the TARGET device (Jetson / GPU server). Fails the pipeline if < 60 FPS or p99 > 16.7 ms.
+    cmd: uv run vd-bench --config configs/bench/realtime.yaml
+    deps:
+      - src/vehicle_detect/benchmark.py
+      - src/vehicle_detect/inference.py
+      - models/export
+    params:
+      - configs/bench/realtime.yaml:
+    metrics:
+      - reports/bench.json:
+          cache: false

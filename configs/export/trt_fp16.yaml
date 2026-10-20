@@ -1,0 +1,7 @@
+checkpoint: runs/rfdetr_small_rtx5070/checkpoint_best_total.pth   # trained on the RTX 5070 (D-014)
+model: small
+output_dir: models/export
+# onnx works everywhere; tensorrt must be built ON the target device (engines are not portable)
+format: onnx            # onnx | tensorrt | coreml | openvino — use tensorrt on the 5070 for the 60 FPS gate
+fp16: true
+batch_size: 1

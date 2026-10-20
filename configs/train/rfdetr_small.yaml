@@ -1,0 +1,21 @@
+model: small            # nano | small | medium  (all Apache-2.0)
+dataset_dir: data/processed/coco   # RF-DETR expects train/ valid/ test/ each with _annotations.coco.json
+output_dir: runs/rfdetr_small
+epochs: 50
+batch_size: 8
+grad_accum_steps: 2
+lr: 1.0e-4
+early_stopping: true
+early_stopping_patience: 10
+checkpoint_interval: 10
+
+# checkpoint & reproducibility practice (D-017)
+seed: 42
+best_model_metric: map          # val mAP50-95 picks checkpoint_best_total.pth (+ early stopping)
+run_test: true                  # evaluate best checkpoint on the held-out test split
+keep_last_checkpoints: 2        # interval archives kept; best_* and last.ckpt are never pruned
+log_checkpoint_artifact: true   # copy best checkpoint into the MLflow run (needed for the registry)
+
+mlflow:
+  experiment: vehicle-detect
+  run_name: rfdetr-small-baseline

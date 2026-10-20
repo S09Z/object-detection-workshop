@@ -1,0 +1,28 @@
+# Python / env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.env
+
+# macOS
+.DS_Store
+
+# Data, weights, runs: DVC only (never git). Raw frames may contain faces / plates (PDPA).
+/data/
+/models/*
+!/models/.gitkeep
+/runs/
+/mlruns/
+mlflow.db
+*.pth
+*.ckpt
+*.onnx
+*.engine
+*.trt
+
+# Reports: metrics JSON is tracked by DVC; demo videos hold raw CCTV frames
+/reports/*
+!/reports/.gitkeep

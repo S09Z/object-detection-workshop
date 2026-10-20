@@ -1,0 +1,38 @@
+# RF-DETR Small on NVIDIA RTX 5070 (12 GB, Blackwell sm_120), CUDA 13 / PyTorch cu130.
+# Run:  make train TRAIN_CONFIG=configs/train/rfdetr_small_rtx5070.yaml
+#
+# 12 GB budget: physical batch 4 x grad_accum 4 = effective 16 (same semantics as larger GPUs).
+# If you hit CUDA OOM: batch_size 2 + grad_accum_steps 8, or set model_kwargs.gradient_checkpointing: true.
+# Alternative: batch_size: auto  (RF-DETR probes VRAM and fills grad_accum to reach effective 16;
+#              fine for exploration, but pin integers for runs you want to compare in MLflow).
+model: small
+dataset_dir: data/processed/coco
+output_dir: runs/rfdetr_small_rtx5070
+epochs: 50
+batch_size: 4
+grad_accum_steps: 4
+lr: 1.0e-4
+early_stopping: true
+early_stopping_patience: 10
+checkpoint_interval: 10
+
+# checkpoint & reproducibility practice (D-017)
+seed: 42
+best_model_metric: map          # val mAP50-95 picks checkpoint_best_total.pth (+ early stopping)
+run_test: true                  # evaluate best checkpoint on the held-out test split
+keep_last_checkpoints: 2        # interval archives kept; best_* and last.ckpt are never pruned
+log_checkpoint_artifact: true   # copy best checkpoint into the MLflow run (needed for the registry)
+
+# forwarded to RFDETR.train()
+train_kwargs:
+  amp_dtype: bf16        # Blackwell has native bf16 — more stable than fp16, same speed
+  num_workers: 8         # dataloader workers; lower to 4 under WSL2 if RAM is tight
+  eval_batch_size: 8
+
+# forwarded to the model constructor
+model_kwargs:
+  gradient_checkpointing: false   # true = less VRAM, ~20-30% slower
+
+mlflow:
+  experiment: vehicle-detect
+  run_name: rfdetr-small-rtx5070

@@ -1,0 +1,50 @@
+# Thai traffic taxonomy (9 classes). Order = class_id in the training dataset.
+classes:
+  - car
+  - pickup
+  - van
+  - bus
+  - truck
+  - motorcycle
+  - bicycle
+  - tuk_tuk        # incl. three-wheelers / samlor
+  - songthaew
+
+# Map source-dataset category names -> target class (null = drop the box).
+# Check every source dataset's LICENSE before using it in a commercial model.
+source_mappings:
+  coco:              # CC BY 4.0 annotations — OK as a commercial seed
+    car: car
+    bus: bus
+    truck: truck     # COCO "truck" mixes pickups and trucks -> relabel a sample
+    motorcycle: motorcycle
+    bicycle: bicycle
+  mio_tcd:           # CC BY-NC-SA 4.0 — workshop/learning ONLY
+    car: car
+    pickup_truck: pickup
+    work_van: van
+    bus: bus
+    articulated_truck: truck
+    single_unit_truck: truck
+    motorcycle: motorcycle
+    bicycle: bicycle
+    non-motorized_vehicle: null
+    pedestrian: null
+  roboflow_thai:     # CC BY 4.0
+    Car: car
+    Pickup: pickup
+    Taxi: car
+    Motorcycle: motorcycle
+    Songthaew: songthaew
+
+paths:
+  raw: data/raw
+  processed: data/processed
+
+split:
+  train: 0.8
+  valid: 0.1
+  test: 0.1
+  seed: 42
+  # Split by CAMERA / video, not by frame — frames from one clip leak across splits.
+  group_by: camera_id

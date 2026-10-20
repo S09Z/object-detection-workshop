@@ -10,17 +10,17 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (project setup)
+> Last updated: 2026-10-20 · by: Claude (phase-1-a)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-1 — Setup & harness |
-| Current sub-task | **phase-1-a**: create the environment and `uv.lock` |
-| Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | `vd-download` (HF/Kaggle/Roboflow) + checkpoint/lineage practice (D-017, D-018) |
-| Next up | phase-1-a (Mac) or phase-1-f (RTX 5070 / WSL2) → phase-1-b → phase-1-d (`make dvc-init`) |
-| Branch / last commit | — (no git repo yet) |
-| Blockers | `uv.lock` has to be generated on a machine that can reach the PyTorch index |
+| Current sub-task | **phase-1-b**: git + pre-commit + first commit |
+| Status | `in progress` <!-- not started / in progress / blocked / done --> |
+| Last done | phase-1-a: `uv sync --all-groups` OK on Mac (torch 2.14.1, MPS), `uv.lock` committed |
+| Next up | phase-1-b → phase-1-c → phase-1-f (RTX 5070 / WSL2) → phase-1-d (`make dvc-init`) |
+| Branch / last commit | main |
+| Blockers | none |
 
 ### Health check (latest `./init.sh`)
 
@@ -28,7 +28,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 |---|---|---|
 | ruff check / format | ✅ pass | 2026-10-20 |
 | pytest `-m "not gpu"` | ✅ 20 passed (run without torch) | 2026-10-20 |
-| `uv sync` | ⏳ not run yet | — |
+| `uv sync --all-groups` | ✅ pass (Mac, Python 3.13 venv) | 2026-10-20 |
 | `make gpu-check` (RTX 5070) | ⏳ not run yet | — |
 
 ### Key metrics (best so far)
@@ -102,3 +102,11 @@ Template (copy it for each entry):
 - Decisions: D-017, D-018
 - Notes for next session: `vd-download` for visaitech hasn't been run against the real repo yet; check the file names against `camera_id_regex`.
   Lineage logging in `train.py` (finding the run by run name) still needs to be tested with a real training run in phase-4-f
+
+### 2026-10-20 — phase-1-a environment + uv.lock
+- Status: done
+- Done: `uv sync --all-groups` on the Mac created `.venv` and `uv.lock`; `.gitignore` added and `git init` done so the baseline template could be committed first
+- Verify: `uv run python -c "import torch, rfdetr, supervision; ..."` printed `2.14.1 True` (MPS)
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: the venv resolved to Python 3.13; phase-1-b pins `.python-version` so the Dockerfile and CI match. The Linux cu130 lock entries are resolved but untested until phase-1-f

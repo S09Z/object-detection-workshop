@@ -29,7 +29,7 @@
 
 > ทุก session ต่อจากนี้เริ่มจาก environment ที่สะอาดและรันซ้ำได้
 
-- [ ] **phase-1-a** สร้าง environment และ `uv.lock`
+- [x] **phase-1-a** สร้าง environment และ `uv.lock`
   - Goal: `make setup` สำเร็จบนเครื่อง dev (Mac) ได้ torch build ที่ถูกต้อง
   - Output: `uv.lock` (commit), `.venv/`, `.env`
   - Verify: `uv run python -c "import torch, rfdetr, supervision; print(torch.__version__, torch.backends.mps.is_available() or torch.cuda.is_available())"` พิมพ์ `True`

@@ -96,13 +96,21 @@ def main() -> None:
         cache = Path("data/_downloads") / name  # outside data/raw: not DVC-tracked
         print(f"[{name}] {src['hub']} -> {out}  (license: {src['license']})")
         root = fetch(src, cache)
-        if out.exists():
-            shutil.rmtree(out)
-        coco = convert(src, root, out)
-        (out / "annotations.coco.json").write_text(json.dumps(coco), encoding="utf-8")
-        (out / "SOURCE.json").write_text(
-            json.dumps({k: v for k, v in src.items() if k != "enabled"}, indent=2), encoding="utf-8"
-        )
+        # Convert beside the old dataset and swap at the end: a failure keeps the old data.
+        tmp = out.parent / f".{name}.tmp"
+        shutil.rmtree(tmp, ignore_errors=True)
+        tmp.mkdir(parents=True)
+        try:
+            coco = convert(src, root, tmp)
+            (tmp / "annotations.coco.json").write_text(json.dumps(coco), encoding="utf-8")
+            (tmp / "SOURCE.json").write_text(
+                json.dumps({k: v for k, v in src.items() if k != "enabled"}, indent=2),
+                encoding="utf-8",
+            )
+            shutil.rmtree(out, ignore_errors=True)
+            tmp.rename(out)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
         print(
             f"[{name}] {len(coco['images'])} images, {len(coco['annotations'])} boxes, "
             f"classes: {[c['name'] for c in coco['categories']]}"

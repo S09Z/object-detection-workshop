@@ -127,3 +127,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: after the user adds `origin` and pushes, check the run; `uv sync --locked` on Linux pulls the cu130 torch wheels (large), so consider a CPU-only CI sync if it is slow
+
+### 2026-10-20 — project-review fixes (split guards, safe download)
+- Status: done (outside PLAN.md sub-tasks; requested after the review)
+- Done: `group_split` scopes groups by `source`, raises if a split would be empty, warns on images without the group key; `vd-download` converts into `.<name>.tmp` and swaps, so a failed convert no longer deletes the existing dataset; tests added (`test_split.py`, `test_download.py`)
+- Verify: `uv run pytest -m "not gpu"` → 25 passed; `ruff check` clean
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: still open from the review: TensorRT provider options (fp16, engine cache) vs `format: tensorrt` export, minimum duration check in `vd-bench`, `async def` + blocking inference and no upload limit in serve, Dockerfile pulls torch just to serve

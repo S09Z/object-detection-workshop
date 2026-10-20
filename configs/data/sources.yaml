@@ -10,11 +10,11 @@ sources:
     enabled: true
     hub: huggingface
     repo_id: visaitech/vehicle-mixed-traffic-detection
-    revision: null            # pin to a commit SHA once chosen (reproducibility)
+    revision: de35185262bda34c104a626f866bab9d9aaf67ed   # pinned 2026-10-20
     allow_patterns: ["images/**", "labels/**", "data.yaml", "classes.txt", "README.md"]
     format: yolo
     splits: [train, val]
-    camera_id_regex: "(V\\d{3})"   # frames come from videos V001..V005 — verify file names after download
+    camera_id_regex: "^(V\\d{3}|VEHICLES)__"   # videos V001..V005 + VEHICLES (verified on the pinned revision)
     license: CC-BY-4.0
     commercial_ok: true       # attribution required
     notes: >

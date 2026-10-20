@@ -236,3 +236,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: consider dropping `iscrowd=1` boxes in `remap_coco`/`prepare` (not changed here). Re-run `make prepare` after more sources are added; do not train on this split, it has 4 empty classes
+
+### 2026-10-20 — drop iscrowd boxes in remap_coco (small fix)
+- Status: done (not a PLAN.md sub-task)
+- Done: `remap_coco` skips `iscrowd=1` boxes; test `test_remap_drops_crowd_boxes` (failed before the fix). Follows the observation in the exploratory prepare entry above
+- Verify: `pytest -m "not gpu"` 27 passed; `make prepare` coco box counts now exclude the crowd boxes
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: phase-3-c is still unchecked (4 classes have no boxes)

@@ -37,7 +37,7 @@
   - Goal: hooks ทำงาน, notebook ถูก strip output อัตโนมัติ
   - Output: initial commit
   - Verify: `uv run pre-commit run --all-files` ผ่านทั้งหมด และ `./init.sh` จบด้วย `OK`
-- [ ] **phase-1-c** CI บน GitHub
+- [x] **phase-1-c** CI บน GitHub
   - Goal: push ขึ้น GitHub แล้ว job `lint-test` เขียว
   - Verify: `gh run list --limit 1` แสดง `completed success`
 - [ ] **phase-1-d** DVC + remote storage

@@ -56,7 +56,7 @@
 
 > ตอบให้ได้ก่อนเขียนโมเดล: ใครจ่ายเงิน, วัดอะไร, ต้องแม่นแค่ไหน, รันที่ไหน
 
-- [ ] **phase-2-a** เลือก use case และ KPI ธุรกิจ
+- [x] **phase-2-a** เลือก use case และ KPI ธุรกิจ
   - Goal: เลือก 1 use case (default: traffic count ที่ทางแยก) ระบุผู้ใช้, KPI ธุรกิจ และ ML metric ที่สอดคล้อง
   - Output: `docs/problem.md` เช่น "count accuracy ≥ 95% เทียบนับมือ 15 นาที, แยก 9 class"
   - Verify: `docs/problem.md` มีหัวข้อ User / KPI / ML metric / Acceptance threshold ครบ

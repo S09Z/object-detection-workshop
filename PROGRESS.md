@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-1-e)
+> Last updated: 2026-10-20 · by: Claude (phase-2-a)
 
 | Field | Value |
 |---|---|
-| Current phase | phase-1 — Setup & harness |
-| Current sub-task | **phase-1-f**: RTX 5070 training machine (needs the PC; Phase 2 can start on the Mac meanwhile) |
+| Current phase | phase-2 — Business framing (phase-1-f waits for the RTX 5070 PC) |
+| Current sub-task | **phase-2-b**: target hardware and latency budget |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-1-e: local MLflow (`sqlite:///mlflow.db`), UI on :5001 |
-| Next up | phase-1-f (RTX 5070 PC) → phase-2-a |
+| Last done | phase-2-a: `docs/problem.md` (default use case, KPI, ML metric, acceptance threshold) |
+| Next up | phase-2-b → phase-2-c → phase-2-d; phase-1-f when on the 5070 PC |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -57,6 +57,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 - [x] Thai footage → none yet, use public clips (D-016)
 - [ ] NAS path, if one exists (otherwise `~/dvc-store`), and how it is backed up (phase-1-d)
 - [ ] Number of cameras and resolution for real use (phase-2-b)
+- [ ] Confirm the use case and the 95% count-accuracy target in `docs/problem.md` (phase-2-a assumptions)
 - [ ] Confirm the 9 classes and their order (D-003, phase-2-d)
 - [x] GitHub repo for phase-1-c → `S09Z/object-detection-workshop`
 
@@ -159,3 +160,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none (local vs central server can be revisited if more than one machine needs to share runs)
 - Notes for next session: the 5070 PC keeps its own `mlflow.db`; copy or point `MLFLOW_TRACKING_URI` at a shared location if you want runs from both machines in one UI
+
+### 2026-10-20 — phase-2-a use case and KPI
+- Status: done
+- Done: `docs/problem.md` with User / KPI / ML metric / Acceptance threshold, built from the PLAN.md defaults (intersection line count, ≥ 95% vs 15-minute manual count); assumptions are tagged `ASSUMPTION` in the file. phase-1-f was skipped because it needs the RTX 5070 PC, not because it is unneeded
+- Verify: `docs/problem.md` has all four headings (User, KPI, ML metric, Acceptance threshold)
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: the use case and thresholds are defaults, not confirmed by the user; phase-2-b needs camera count and resolution. `README.md` quick start still says the Linux torch index is `cu128`; it is `cu130` (not changed, outside this sub-task)

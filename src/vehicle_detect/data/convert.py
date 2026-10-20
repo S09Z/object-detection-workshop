@@ -5,8 +5,10 @@
 
 Supported input formats:
   coco         a COCO json + image folder (Roboflow "COCO" export, many HF repos)
-  yolo         images/<split>/*.jpg + labels/<split>/*.txt (class cx cy w h, normalised) — HF/Kaggle/Roboflow
-  hf_metadata  HF imagefolder: <split>/metadata.jsonl with {"file_name", "objects": {"bbox", "category"}}
+  yolo         images/<split>/*.jpg + labels/<split>/*.txt (class cx cy w h, normalised)
+               — HF / Kaggle / Roboflow
+  hf_metadata  HF imagefolder: <split>/metadata.jsonl, each row
+               {"file_name", "objects": {"bbox", "category"}}
 """
 
 from __future__ import annotations
@@ -48,7 +50,11 @@ class CocoBuilder:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {"images": self.images, "annotations": self.annotations, "categories": self.categories}
+        return {
+            "images": self.images,
+            "annotations": self.annotations,
+            "categories": self.categories,
+        }
 
 
 def _copy_image(src: Path, images_dir: Path, prefix: str) -> tuple[str, int, int]:

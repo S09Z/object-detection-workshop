@@ -33,7 +33,7 @@
   - Goal: `make setup` สำเร็จบนเครื่อง dev (Mac) ได้ torch build ที่ถูกต้อง
   - Output: `uv.lock` (commit), `.venv/`, `.env`
   - Verify: `uv run python -c "import torch, rfdetr, supervision; print(torch.__version__, torch.backends.mps.is_available() or torch.cuda.is_available())"` พิมพ์ `True`
-- [ ] **phase-1-b** Git + pre-commit + first commit
+- [x] **phase-1-b** Git + pre-commit + first commit
   - Goal: hooks ทำงาน, notebook ถูก strip output อัตโนมัติ
   - Output: initial commit
   - Verify: `uv run pre-commit run --all-files` ผ่านทั้งหมด และ `./init.sh` จบด้วย `OK`

@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-1-a)
+> Last updated: 2026-10-20 · by: Claude (phase-1-b)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-1 — Setup & harness |
-| Current sub-task | **phase-1-b**: git + pre-commit + first commit |
-| Status | `in progress` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-1-a: `uv sync --all-groups` OK on Mac (torch 2.14.1, MPS), `uv.lock` committed |
-| Next up | phase-1-b → phase-1-c → phase-1-f (RTX 5070 / WSL2) → phase-1-d (`make dvc-init`) |
+| Current sub-task | **phase-1-c**: CI on GitHub |
+| Status | `not started` <!-- not started / in progress / blocked / done --> |
+| Last done | phase-1-b: git, `.gitignore`, `.python-version` (3.13), `.env.example`, `.gitattributes`, pre-commit (ruff, nbstripout, data-file guard) |
+| Next up | phase-1-c → phase-1-f (RTX 5070 / WSL2) → phase-1-d (`make dvc-init`) |
 | Branch / last commit | main |
 | Blockers | none |
 
@@ -26,7 +26,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 | Check | Result | When |
 |---|---|---|
-| ruff check / format | ✅ pass | 2026-10-20 |
+| ruff check / format | ✅ pass (project ruff via uv; an older ruff had missed 2 E501 + 1 format diff in convert.py) | 2026-10-20 |
 | pytest `-m "not gpu"` | ✅ 20 passed (run without torch) | 2026-10-20 |
 | `uv sync --all-groups` | ✅ pass (Mac, Python 3.13 venv) | 2026-10-20 |
 | `make gpu-check` (RTX 5070) | ⏳ not run yet | — |
@@ -110,3 +110,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: the venv resolved to Python 3.13; phase-1-b pins `.python-version` so the Dockerfile and CI match. The Linux cu130 lock entries are resolved but untested until phase-1-f
+
+### 2026-10-20 — phase-1-b git + pre-commit
+- Status: done
+- Done: `.python-version` (3.13, matches the lock), `.env.example`, `.gitattributes` (nbstripout), `.pre-commit-config.yaml` (local hooks via uv: ruff check/format, nbstripout, block data/weights files); notebooks stripped; two docstring lines and one format fix in `data/convert.py`
+- Verify: `uv run pre-commit run --all-files` all passed; `./init.sh` ended with `OK`
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: the "lint clean" claim in earlier entries came from a different ruff version; the uv-pinned one is authoritative. Still open from the project review: split guards, download delete-before-convert, TensorRT provider options, bench minimum duration

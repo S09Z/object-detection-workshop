@@ -1,0 +1,24 @@
+# Runs inside the uv environment so hook versions match uv.lock.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types_or: [python, jupyter]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types_or: [python, jupyter]
+      - id: nbstripout
+        name: strip notebook outputs
+        entry: uv run nbstripout
+        language: system
+        files: \.ipynb$
+      - id: no-large-or-data-files
+        name: block data / weights
+        entry: Data and weights belong in DVC, not git
+        language: fail
+        files: \.(pth|ckpt|onnx|engine|trt|mp4|avi|mov)$

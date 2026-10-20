@@ -14,11 +14,18 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
+import tarfile
 from pathlib import Path
 from typing import Any
 
 from vehicle_detect.config import load_config
-from vehicle_detect.data.convert import coco_passthrough, hf_metadata_to_coco, yolo_to_coco
+from vehicle_detect.data.convert import (
+    coco_passthrough,
+    hf_metadata_to_coco,
+    mio_tcd_to_coco,
+    yolo_to_coco,
+)
 
 
 def fetch(src: dict[str, Any], dest: Path) -> Path:
@@ -49,6 +56,17 @@ def fetch(src: dict[str, Any], dest: Path) -> Path:
             seed=src.get("seed", 42),
             shuffle=True,
         )
+    elif hub == "http_tar":
+        dest.mkdir(parents=True, exist_ok=True)
+        archive = dest / Path(src["url"]).name
+        # curl resumes a partial download (-C -); the archive is multi-GB
+        subprocess.run(
+            ["curl", "-L", "--fail", "-C", "-", "-o", str(archive), src["url"]], check=True
+        )
+        if not (dest / ".extracted").exists():
+            with tarfile.open(archive) as tar:
+                tar.extractall(dest, filter="data")
+            (dest / ".extracted").touch()
     elif hub == "kaggle":
         from kaggle.api.kaggle_api_extended import KaggleApi  # needs ~/.kaggle/kaggle.json
 
@@ -79,6 +97,16 @@ def convert(src: dict[str, Any], root: Path, out: Path) -> dict[str, Any]:
     fmt = src["format"]
     if fmt == "coco":
         return coco_passthrough(root, out, src["annotations"], src.get("images", "."))
+    if fmt == "mio_tcd":
+        return mio_tcd_to_coco(
+            root,
+            out,
+            src["annotations"],
+            src["images"],
+            src["max_images"],
+            src.get("prefer_classes", []),
+            src.get("seed", 42),
+        )
     names = class_names_for(src, root)
     splits = src.get("splits", ["train", "val"])
     regex = src.get("camera_id_regex")

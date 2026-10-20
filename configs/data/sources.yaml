@@ -40,6 +40,23 @@ sources:
       COCO 2017 vehicle subset. Each kept image keeps ALL its boxes (person etc. are dropped by
       source_mappings). `truck` mixes pickups and trucks. No camera ids: stills are split per frame.
 
+  - name: mio_tcd             # key must match `source_mappings`; LEARNING ONLY (CC BY-NC-SA 4.0)
+    enabled: false            # 3.7 GB download; run explicitly: vd-download --only mio_tcd
+    hub: http_tar
+    url: https://tcd.miovision.com/static/dataset/MIO-TCD-Localization.tar
+    subdir: MIO-TCD-Localization
+    format: mio_tcd
+    annotations: gt_train.csv
+    images: train
+    max_images: 5000          # 110k labelled images exist; half the subset favours rare classes
+    prefer_classes: [pickup_truck, work_van]
+    seed: 42
+    license: CC-BY-NC-SA-4.0
+    commercial_ok: false      # weights trained on it stay in the learning set (D-010); cite Luo et al., IEEE TIP 2018
+    notes: >
+      Traffic cameras in Canada/US. Gives pickup_truck and work_van, which COCO lacks. No camera ids,
+      so frames split per frame (same-camera frames may land in different splits).
+
   - name: ua_detrac_hf_mirror
     enabled: false
     hub: huggingface

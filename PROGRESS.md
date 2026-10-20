@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-2-a)
+> Last updated: 2026-10-20 · by: Claude (phase-2-b)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-2 — Business framing (phase-1-f waits for the RTX 5070 PC) |
-| Current sub-task | **phase-2-b**: target hardware and latency budget |
+| Current sub-task | **phase-2-c**: privacy (PDPA) short DPIA |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-2-a: `docs/problem.md` (default use case, KPI, ML metric, acceptance threshold) |
-| Next up | phase-2-b → phase-2-c → phase-2-d; phase-1-f when on the 5070 PC |
+| Last done | phase-2-b: latency budget in `docs/problem.md` (15.5 ms of 16.7 ms) |
+| Next up | phase-2-c → phase-2-d; phase-1-f when on the 5070 PC |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -56,8 +56,8 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 - [x] DVC remote → local disk / NAS (D-015)
 - [x] Thai footage → none yet, use public clips (D-016)
 - [ ] NAS path, if one exists (otherwise `~/dvc-store`), and how it is backed up (phase-1-d)
-- [ ] Number of cameras and resolution for real use (phase-2-b)
-- [ ] Confirm the use case and the 95% count-accuracy target in `docs/problem.md` (phase-2-a assumptions)
+- [ ] Number of cameras and resolution for real use (budget assumes 1 camera, 1080p@30)
+- [x] Use case and 95% total / 90% per-class count accuracy confirmed (2026-10-20)
 - [ ] Confirm the 9 classes and their order (D-003, phase-2-d)
 - [x] GitHub repo for phase-1-c → `S09Z/object-detection-workshop`
 
@@ -168,3 +168,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: the use case and thresholds are defaults, not confirmed by the user; phase-2-b needs camera count and resolution. `README.md` quick start still says the Linux torch index is `cu128`; it is `cu130` (not changed, outside this sub-task)
+
+### 2026-10-20 — phase-2-b target hardware and latency budget
+- Status: done
+- Done: `docs/problem.md` now confirms the use case (user, 95% total / 90% per class) and has a per-stage budget table for the RTX 5070 PC mapped onto `vd-bench`'s decode/detect/track stages; camera count and resolution are an assumption (1 camera, 1080p@30)
+- Verify: budget sums to 15.5 ms ≤ 16.7 ms (decode 3.0, preprocess 1.5, model 8.0, postprocess 0.5, track 1.5, count 1.0); the bench must run with no training on the same GPU
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: budget numbers are targets, to be measured in phase-6-b. phase-6-a will use model-only ≤ 4.0 ms (50% of the 8.0 ms model row). If real use has several cameras, redo the budget

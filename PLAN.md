@@ -60,7 +60,7 @@
   - Goal: เลือก 1 use case (default: traffic count ที่ทางแยก) ระบุผู้ใช้, KPI ธุรกิจ และ ML metric ที่สอดคล้อง
   - Output: `docs/problem.md` เช่น "count accuracy ≥ 95% เทียบนับมือ 15 นาที, แยก 9 class"
   - Verify: `docs/problem.md` มีหัวข้อ User / KPI / ML metric / Acceptance threshold ครบ
-- [ ] **phase-2-b** เลือก target hardware และ latency budget
+- [x] **phase-2-b** เลือก target hardware และ latency budget
   - Goal: อุปกรณ์คือ **RTX 5070 PC (WSL2)** (D-014) ให้ระบุจำนวนกล้อง ความละเอียด (เช่น 1080p@30) และว่ารันพร้อมกับงาน train หรือไม่
   - Output: ตาราง budget ใน `docs/problem.md`: decode / detect / track / อื่นๆ รวม ≤ 16.7 ms
   - Verify: ผลรวม budget ≤ 16.7 ms และ bench ต้องวัดตอนที่ไม่มี training รันอยู่บนเครื่องเดียวกัน

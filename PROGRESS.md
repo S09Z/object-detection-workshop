@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-2-d)
+> Last updated: 2026-10-20 · by: Claude (phase-3-a)
 
 | Field | Value |
 |---|---|
-| Current phase | phase-2 — Business framing (phase-1-f waits for the RTX 5070 PC) |
-| Current sub-task | **phase-3-a**: license register |
+| Current phase | phase-3 — Data (phase-1-f waits for the RTX 5070 PC) |
+| Current sub-task | **phase-3-b**: download and convert to COCO (`make download`) |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-2-d: taxonomy frozen (D-003 Accepted), `docs/labeling_guide.md` |
-| Next up | phase-3-a → phase-3-b; phase-1-f when on the 5070 PC |
+| Last done | phase-3-a: `docs/licenses.md` (datasets, models, libraries) |
+| Next up | phase-3-b → phase-3-c; phase-1-f when on the 5070 PC |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -202,3 +202,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: D-003 Accepted
 - Notes for next session: class order is now fixed; any change breaks every checkpoint and needs a new decision plus user approval
+
+### 2026-10-20 — phase-3-a license register
+- Status: done
+- Done: `docs/licenses.md` with every dataset in `source_mappings` and `sources.yaml` (license, mirror license, commercial OK?, phase), the models and key libraries, and a verification checklist
+- Verify: script check: every key in `source_mappings` (coco, mio_tcd, roboflow_thai) and every source in `sources.yaml` has a row in `docs/licenses.md`
+- MLflow run / DVC rev: n/a
+- Decisions: none (follows D-010)
+- Notes for next session: licenses come from the project config, not from reading the source pages; the `Verified` column is "No" everywhere, so do the checklist at the bottom of the file before `make download` in phase-3-b. `roboflow_thai` workspace/project are still `CHANGE_ME`

@@ -75,7 +75,7 @@
 
 ## Phase 3 — Data ("become one with the data")
 
-- [ ] **phase-3-a** License register
+- [x] **phase-3-a** License register
   - Goal: บันทึก license ทุก dataset/model ก่อนดาวน์โหลด
   - Output: `docs/licenses.md` ตาราง: name, license, commercial OK?, ใช้ใน phase ไหน
   - Verify: ทุก source ใน `source_mappings` มีแถวใน `docs/licenses.md`

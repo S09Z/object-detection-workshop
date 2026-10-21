@@ -10,17 +10,17 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-1-b)
+> Last updated: 2026-10-20 · by: Claude (phase-1-c)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-1 — Setup & harness |
-| Current sub-task | **phase-1-c**: CI on GitHub |
-| Status | `blocked` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-1-b: git, `.gitignore`, `.python-version` (3.13), `.env.example`, `.gitattributes`, pre-commit (ruff, nbstripout, data-file guard) |
-| Next up | phase-1-c → phase-1-f (RTX 5070 / WSL2) → phase-1-d (`make dvc-init`) |
-| Branch / last commit | main |
-| Blockers | phase-1-c Verify needs a GitHub remote: none is configured, and pushing is the user's call |
+| Current sub-task | **phase-1-f**: RTX 5070 training machine (or phase-1-d on any machine) |
+| Status | `not started` <!-- not started / in progress / blocked / done --> |
+| Last done | phase-1-c: CI `lint-test` green on GitHub (run 39368727506) |
+| Next up | phase-1-f (RTX 5070 / WSL2) → phase-1-d (`make dvc-init`) |
+| Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
+| Blockers | none |
 
 ### Health check (latest `./init.sh`)
 
@@ -58,7 +58,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 - [ ] NAS path, if one exists (otherwise `~/dvc-store`), and how it is backed up (phase-1-d)
 - [ ] Number of cameras and resolution for real use (phase-2-b)
 - [ ] Confirm the 9 classes and their order (D-003, phase-2-d)
-- [ ] GitHub repo for phase-1-c: create/choose one and add it as `origin` (private or public?)
+- [x] GitHub repo for phase-1-c → `S09Z/object-detection-workshop`
 
 ---
 
@@ -135,3 +135,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: still open from the review: TensorRT provider options (fp16, engine cache) vs `format: tensorrt` export, minimum duration check in `vd-bench`, `async def` + blocking inference and no upload limit in serve, Dockerfile pulls torch just to serve
+
+### 2026-10-20 — phase-1-c CI on GitHub
+- Status: done
+- Done: user pushed `main` to `S09Z/object-detection-workshop`; `lint-test` workflow ran; switched local work to the `development` branch
+- Verify: `gh run list --limit 1` → completed success (ci, main, push, 53s)
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: workflow is development branch → push per sub-task → feature branch from origin/development → draft PR to main

@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-3-b, partial: visaitech + coco + mio_tcd)
+> Last updated: 2026-10-21 · by: Claude (phase-1-f, RTX 5070 PC set up)
 
 | Field | Value |
 |---|---|
-| Current phase | phase-3 — Data (phase-1-f waits for the RTX 5070 PC) |
+| Current phase | phase-3 — Data (now on the RTX 5070 PC, WSL2) |
 | Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed`, `coco`, `mio_tcd` done; Roboflow Thai, clips pending) |
 | Status | `in progress` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-a: `docs/licenses.md` (datasets, models, libraries) |
-| Next up | phase-3-b → phase-3-c; phase-1-f when on the 5070 PC |
+| Last done | phase-1-f: RTX 5070 / WSL2 set up, `make gpu-check` OK |
+| Next up | phase-3-b (Roboflow Thai + clips) → phase-3-c |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -27,9 +27,9 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 | Check | Result | When |
 |---|---|---|
 | ruff check / format | ✅ pass (project ruff via uv; an older ruff had missed 2 E501 + 1 format diff in convert.py) | 2026-10-20 |
-| pytest `-m "not gpu"` | ✅ 20 passed (run without torch) | 2026-10-20 |
+| `./init.sh` (WSL2) | ✅ OK | 2026-10-21 |
 | `uv sync --all-groups` | ✅ pass (Mac, Python 3.13 venv) | 2026-10-20 |
-| `make gpu-check` (RTX 5070) | ⏳ not run yet | — |
+| `make gpu-check` (RTX 5070) | ✅ OK, sm_120, bf16 True | 2026-10-21 |
 
 ### Key metrics (best so far)
 
@@ -252,3 +252,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: `prepare` now mixes a non-commercial source (MIO-TCD) with CC BY ones in one split, so these weights are learning-only (D-010); a commercial split needs a per-source flag in `thai_traffic.yaml` (not implemented). `data/_downloads/mio_tcd` is a 7.0 GB cache (tar + extracted) and can be deleted. MIO-TCD has no camera ids, so same-camera frames can land in different splits; motorcycle/bicycle counts from it are small (63 / 102 boxes)
+
+### 2026-10-21 — phase-1-f RTX 5070 training machine
+- Status: done
+- Done: Windows driver 617.14 (>= 580); existing WSL2 Ubuntu 24.04; apt build-essential/make/libgl1/libglib2.0-0, uv 0.13.4; cloned to `~/object-detection-workshop` (WSL home), branch development; `make setup` (uv sync --all-groups from the Mac lock; cu130 wheels installed fine on Linux)
+- Verify: `make gpu-check` -> torch 2.14.1+cu130, RTX 5070 11.9 GB sm_120, bf16 supported: True, OK: CUDA kernels run on this GPU; `./init.sh` OK
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: `data/` is not on this machine yet (re-run `vd-download` or rsync from the Mac; ask the user before downloading); run `make dvc-init` here. nvidia-smi lives in /usr/lib/wsl/lib, keep it on PATH when scripting wsl. Peak VRAM / s-per-epoch still unmeasured

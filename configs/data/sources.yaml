@@ -10,17 +10,52 @@ sources:
     enabled: true
     hub: huggingface
     repo_id: visaitech/vehicle-mixed-traffic-detection
-    revision: null            # pin to a commit SHA once chosen (reproducibility)
+    revision: de35185262bda34c104a626f866bab9d9aaf67ed   # pinned 2026-10-20
     allow_patterns: ["images/**", "labels/**", "data.yaml", "classes.txt", "README.md"]
     format: yolo
     splits: [train, val]
-    camera_id_regex: "(V\\d{3})"   # frames come from videos V001..V005 — verify file names after download
+    camera_id_regex: "^(V\\d{3}|VEHICLES)__"   # videos V001..V005 + VEHICLES (verified on the pinned revision)
     license: CC-BY-4.0
     commercial_ok: true       # attribution required
     notes: >
       South-Asian mixed traffic, dashcam. Coarse classes (pedestrian, 2-wheeler, 3-wheeler,
       4-wheeler) — 4-wheeler mixes car/pickup/van/bus/truck, so DON'T map it to "car".
       Useful for motorcycle / tuk_tuk, or as eval-only data. n<1K images.
+
+  - name: coco                # key must match `source_mappings` in thai_traffic.yaml
+    enabled: true
+    hub: fiftyone_zoo
+    zoo_name: coco-2017
+    split: train
+    classes: [car, bus, truck, motorcycle, bicycle]
+    max_samples: 3000         # images that contain at least one of `classes`; seeded shuffle
+    seed: 42
+    subdir: coco-2017/train   # FiftyOne zoo layout under the cache dir
+    format: coco
+    annotations: labels.json
+    images: data
+    license: "annotations CC-BY-4.0; images: Flickr Terms of Use (COCO does not own the copyright)"
+    commercial_ok: true       # annotations yes; image terms are the user's responsibility (docs/licenses.md)
+    notes: >
+      COCO 2017 vehicle subset. Each kept image keeps ALL its boxes (person etc. are dropped by
+      source_mappings). `truck` mixes pickups and trucks. No camera ids: stills are split per frame.
+
+  - name: mio_tcd             # key must match `source_mappings`; LEARNING ONLY (CC BY-NC-SA 4.0)
+    enabled: false            # 3.7 GB download; run explicitly: vd-download --only mio_tcd
+    hub: http_tar
+    url: https://tcd.miovision.com/static/dataset/MIO-TCD-Localization.tar
+    subdir: MIO-TCD-Localization
+    format: mio_tcd
+    annotations: gt_train.csv
+    images: train
+    max_images: 5000          # 110k labelled images exist; half the subset favours rare classes
+    prefer_classes: [pickup_truck, work_van]
+    seed: 42
+    license: CC-BY-NC-SA-4.0
+    commercial_ok: false      # weights trained on it stay in the learning set (D-010); cite Luo et al., IEEE TIP 2018
+    notes: >
+      Traffic cameras in Canada/US. Gives pickup_truck and work_van, which COCO lacks. No camera ids,
+      so frames split per frame (same-camera frames may land in different splits).
 
   - name: ua_detrac_hf_mirror
     enabled: false

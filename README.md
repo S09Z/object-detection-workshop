@@ -45,7 +45,7 @@ The 5070 can also run `make bench`, but if the deployment device is a Jetson, th
 - `PROGRESS.md`: current state snapshot (overwritten) + append-only session log
 - `DECISIONS.md`: decision records (`D-001` …), the *why* behind choices
 - `init.sh`: start-of-session check (sync, lint, tests, next sub-task)
-
+3313
 Typical prompt: *"Do phase-3-c"* or *"Continue with the next sub-task in PLAN.md."*
 
 ## Project layout
@@ -68,7 +68,7 @@ dvc.yaml            pipeline: prepare → train → export → evaluate → benc
 | Data | `make prepare` | `data/processed/coco`, `reports/data_stats.json` |
 | Train | `make train` | `runs/…/checkpoint_best_total.pth`, MLflow run |
 | Resume | `make train-resume TRAIN_CONFIG=...` | continues from `last.ckpt` |
-| Experiments | `make mlflow` | UI at http://localhost:5000 |
+| Experiments | `make mlflow` | UI at http://localhost:5001 |
 | Register | `make register RUN_ID=<id>` | MLflow Model Registry version, alias `candidate` |
 | Export | `make export` | `models/export/*.onnx` (or TensorRT engine **built on the device**) |
 | Evaluate | `make eval` | `reports/eval.json` (mAP, per-class AP, per-condition mAP) |

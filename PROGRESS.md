@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-1-c)
+> Last updated: 2026-10-20 · by: Claude (phase-1-d)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-1 — Setup & harness |
-| Current sub-task | **phase-1-f**: RTX 5070 training machine (or phase-1-d on any machine) |
+| Current sub-task | **phase-1-e**: MLflow tracking |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-1-c: CI `lint-test` green on GitHub (run 39368727506) |
-| Next up | phase-1-f (RTX 5070 / WSL2) → phase-1-d (`make dvc-init`) |
+| Last done | phase-1-d: DVC initialised, remote `storage` = `~/dvc-store` (local, per machine) |
+| Next up | phase-1-e → phase-1-f (needs the RTX 5070 PC) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -143,3 +143,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: workflow is development branch → push per sub-task → feature branch from origin/development → draft PR to main
+
+### 2026-10-20 — phase-1-d DVC + remote storage
+- Status: done
+- Done: `make dvc-init` → `.dvc/` + `.dvcignore` committed; remote `storage` = `/Users/ittichaib/dvc-store` recorded in `.dvc/config.local` (not committed, so every machine sets its own path); a smoke file was added, pushed and then removed
+- Verify: `dvc remote list` shows `storage (default)`; `dvc push` → "1 file pushed", file present under `~/dvc-store/files/md5/`; `dvc status -c` → in sync
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: NAS path and backup plan are still open (default `~/dvc-store` has no backup). On the RTX 5070 PC run `make dvc-init DVC_REMOTE=<path>` there. `dvc status -c` warns that `models/export` has no version info until the pipeline has run once

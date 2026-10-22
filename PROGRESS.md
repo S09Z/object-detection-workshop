@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-1-d)
+> Last updated: 2026-10-20 · by: Claude (phase-3-b, partial)
 
 | Field | Value |
 |---|---|
-| Current phase | phase-1 — Setup & harness |
-| Current sub-task | **phase-1-e**: MLflow tracking |
-| Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-1-d: DVC initialised, remote `storage` = `~/dvc-store` (local, per machine) |
-| Next up | phase-1-e → phase-1-f (needs the RTX 5070 PC) |
+| Current phase | phase-3 — Data (phase-1-f waits for the RTX 5070 PC) |
+| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed` done; others pending) |
+| Status | `in progress` <!-- not started / in progress / blocked / done --> |
+| Last done | phase-3-a: `docs/licenses.md` (datasets, models, libraries) |
+| Next up | phase-3-b → phase-3-c; phase-1-f when on the 5070 PC |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -56,8 +56,11 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 - [x] DVC remote → local disk / NAS (D-015)
 - [x] Thai footage → none yet, use public clips (D-016)
 - [ ] NAS path, if one exists (otherwise `~/dvc-store`), and how it is backed up (phase-1-d)
-- [ ] Number of cameras and resolution for real use (phase-2-b)
-- [ ] Confirm the 9 classes and their order (D-003, phase-2-d)
+- [x] 1 camera, 1080p (confirmed 2026-10-20)
+- [x] Retention periods in `docs/privacy.md` confirmed (2026-10-20)
+- [ ] Data controller if real footage is collected (phase-3-f)
+- [x] Use case and 95% total / 90% per-class count accuracy confirmed (2026-10-20)
+- [x] 9 classes and their order frozen (D-003, 2026-10-20)
 - [x] GitHub repo for phase-1-c → `S09Z/object-detection-workshop`
 
 ---
@@ -151,3 +154,67 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: NAS path and backup plan are still open (default `~/dvc-store` has no backup). On the RTX 5070 PC run `make dvc-init DVC_REMOTE=<path>` there. `dvc status -c` warns that `models/export` has no version info until the pipeline has run once
+
+### 2026-10-20 — phase-1-e MLflow tracking
+- Status: done
+- Done: chose local tracking (`sqlite:///mlflow.db`, set in `.env` / `.env.example`, same default as `vd-train`); `make mlflow` now serves on :5001 (`MLFLOW_PORT` to override) because macOS AirPlay Receiver answers on :5000 with 403; README updated
+- Verify: logged run `phase-1-e-smoke` to `vehicle-detect`; `make mlflow` UI returned HTTP 200 and the run was returned by the search API; the smoke run was then deleted
+- MLflow run / DVC rev: n/a
+- Decisions: none (local vs central server can be revisited if more than one machine needs to share runs)
+- Notes for next session: the 5070 PC keeps its own `mlflow.db`; copy or point `MLFLOW_TRACKING_URI` at a shared location if you want runs from both machines in one UI
+
+### 2026-10-20 — phase-2-a use case and KPI
+- Status: done
+- Done: `docs/problem.md` with User / KPI / ML metric / Acceptance threshold, built from the PLAN.md defaults (intersection line count, ≥ 95% vs 15-minute manual count); assumptions are tagged `ASSUMPTION` in the file. phase-1-f was skipped because it needs the RTX 5070 PC, not because it is unneeded
+- Verify: `docs/problem.md` has all four headings (User, KPI, ML metric, Acceptance threshold)
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: the use case and thresholds are defaults, not confirmed by the user; phase-2-b needs camera count and resolution. `README.md` quick start still says the Linux torch index is `cu128`; it is `cu130` (not changed, outside this sub-task)
+
+### 2026-10-20 — phase-2-b target hardware and latency budget
+- Status: done
+- Done: `docs/problem.md` now confirms the use case (user, 95% total / 90% per class) and has a per-stage budget table for the RTX 5070 PC mapped onto `vd-bench`'s decode/detect/track stages; camera count and resolution are an assumption (1 camera, 1080p@30)
+- Verify: budget sums to 15.5 ms ≤ 16.7 ms (decode 3.0, preprocess 1.5, model 8.0, postprocess 0.5, track 1.5, count 1.0); the bench must run with no training on the same GPU
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: budget numbers are targets, to be measured in phase-6-b. phase-6-a will use model-only ≤ 4.0 ms (50% of the 8.0 ms model row). If real use has several cameras, redo the budget
+
+### 2026-10-20 — phase-2-c privacy (PDPA) DPIA-lite
+- Status: done
+- Done: `docs/privacy.md`: data inventory, data flow, where images must not appear (git / MLflow / logs / notebooks / demo video) with the enforcing mechanism, retention (PROPOSED), CCTV notice, risks; camera setup (1 camera, 1080p) confirmed in `docs/problem.md`
+- Verify: the document states that only counts/boxes leave the device and that no images or plates go into git or MLflow (sections "Data flow" and "Where images must not appear")
+- MLflow run / DVC rev: n/a
+- Decisions: none (follows D-011)
+- Notes for next session: retention periods are proposals; the unauthenticated `/detect` endpoint is listed as an open risk for phase-7-a
+
+### 2026-10-20 — phase-2-d class taxonomy (partial)
+- Status: partial (box not ticked)
+- Done: `docs/labeling_guide.md` with rules per box, a definition table for the 9 classes in `thai_traffic.yaml` order, ambiguous-case rules (pickup vs truck, van vs car, songthaew); no example images yet because no Thai footage exists (D-016)
+- Verify: `make test` passes (25 passed, includes `test_every_config_mapping_points_to_a_real_class`); the taxonomy itself still needs the user's yes
+- MLflow run / DVC rev: n/a
+- Decisions: D-003 stays `Proposed` until the user confirms
+- Notes for next session: on confirmation, set D-003 to `Accepted` (status edit only), tick phase-2-d, then phase-3-a. Add example images during phase-3-d/3-f
+
+### 2026-10-20 — phase-2-d class taxonomy frozen
+- Status: done
+- Done: user confirmed the 9 classes in order (car, pickup, van, bus, truck, motorcycle, bicycle, tuk_tuk, songthaew); D-003 set to Accepted; labeling guide marked frozen
+- Verify: `make test` passes (25 passed, includes `test_every_config_mapping_points_to_a_real_class`)
+- MLflow run / DVC rev: n/a
+- Decisions: D-003 Accepted
+- Notes for next session: class order is now fixed; any change breaks every checkpoint and needs a new decision plus user approval
+
+### 2026-10-20 — phase-3-a license register
+- Status: done
+- Done: `docs/licenses.md` with every dataset in `source_mappings` and `sources.yaml` (license, mirror license, commercial OK?, phase), the models and key libraries, and a verification checklist
+- Verify: script check: every key in `source_mappings` (coco, mio_tcd, roboflow_thai) and every source in `sources.yaml` has a row in `docs/licenses.md`
+- MLflow run / DVC rev: n/a
+- Decisions: none (follows D-010)
+- Notes for next session: licenses come from the project config, not from reading the source pages; the `Verified` column is "No" everywhere, so do the checklist at the bottom of the file before `make download` in phase-3-b. `roboflow_thai` workspace/project are still `CHANGE_ME`
+
+### 2026-10-20 — phase-3-b dataset download (partial: visaitech_mixed)
+- Status: partial (box not ticked)
+- Done: read the dataset card (CC BY 4.0, commercial OK with attribution); pinned `revision` de35185 in `sources.yaml`; `make download` fetched images/labels only (27 MB, skipped the 12 GB videos) and wrote `data/raw/visaitech_mixed/{images,annotations.coco.json,SOURCE.json}`; fixed `camera_id_regex` so the 23 `VEHICLES__*` frames get a camera id (they were silently ungrouped, which would have split them per frame); updated the `visaitech_mixed` row in `docs/licenses.md`
+- Verify: partial. `visaitech_mixed`: 293 images, 1,506 boxes (matches the card), SOURCE.json present, licenses.md row has original and mirror license; camera ids V001–V005 + VEHICLES, none missing. The PLAN criterion covers every source (COCO subset, MIO-TCD/UA-DETRAC, Roboflow Thai, ≥ 5 min of clips in `data/samples/`) and those were not downloaded
+- MLflow run / DVC rev: n/a (`dvc add data/raw` is phase-3-g)
+- Decisions: none
+- Notes for next session: only 5 + 1 camera groups here, so a 0.8/0.1/0.1 split will hit the new empty-split guard on this source alone; merge with the other sources before `make prepare`. `visaitech_mixed` is not in `source_mappings` on purpose (its 4-wheeler class mixes car/pickup/van/bus/truck). Next downloads need user permission and the license checklist in `docs/licenses.md`

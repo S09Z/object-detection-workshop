@@ -44,7 +44,7 @@
   - Goal: `make dvc-init` ให้ remote อยู่บน local disk หรือ NAS (D-015) โดย default คือ `~/dvc-store` ส่วน NAS ให้ใช้ `DVC_REMOTE=/mnt/nas/...`
   - Output: `.dvc/config` (commit) ส่วน path เฉพาะเครื่องอยู่ใน `.dvc/config.local` (ไม่ commit) และมีแผน backup ของ disk/NAS
   - Verify: `uv run dvc remote list` แสดง `storage` และ `uv run dvc push` ไฟล์ทดสอบ 1 ไฟล์แล้วเห็นใน remote
-- [ ] **phase-1-e** MLflow tracking
+- [x] **phase-1-e** MLflow tracking
   - Goal: เลือก local (`./mlruns`) หรือ server กลาง, ตั้งใน `.env`
   - Verify: `make mlflow` เปิด UI ได้ และ log run ทดสอบ 1 run เห็นใน UI
 - [ ] **phase-1-f** เครื่อง train RTX 5070 (CUDA 13)
@@ -56,26 +56,26 @@
 
 > ตอบให้ได้ก่อนเขียนโมเดล: ใครจ่ายเงิน, วัดอะไร, ต้องแม่นแค่ไหน, รันที่ไหน
 
-- [ ] **phase-2-a** เลือก use case และ KPI ธุรกิจ
+- [x] **phase-2-a** เลือก use case และ KPI ธุรกิจ
   - Goal: เลือก 1 use case (default: traffic count ที่ทางแยก) ระบุผู้ใช้, KPI ธุรกิจ และ ML metric ที่สอดคล้อง
   - Output: `docs/problem.md` เช่น "count accuracy ≥ 95% เทียบนับมือ 15 นาที, แยก 9 class"
   - Verify: `docs/problem.md` มีหัวข้อ User / KPI / ML metric / Acceptance threshold ครบ
-- [ ] **phase-2-b** เลือก target hardware และ latency budget
+- [x] **phase-2-b** เลือก target hardware และ latency budget
   - Goal: อุปกรณ์คือ **RTX 5070 PC (WSL2)** (D-014) ให้ระบุจำนวนกล้อง ความละเอียด (เช่น 1080p@30) และว่ารันพร้อมกับงาน train หรือไม่
   - Output: ตาราง budget ใน `docs/problem.md`: decode / detect / track / อื่นๆ รวม ≤ 16.7 ms
   - Verify: ผลรวม budget ≤ 16.7 ms และ bench ต้องวัดตอนที่ไม่มี training รันอยู่บนเครื่องเดียวกัน
-- [ ] **phase-2-c** Privacy (PDPA) แบบย่อ
+- [x] **phase-2-c** Privacy (PDPA) แบบย่อ
   - Goal: data flow ว่าภาพอยู่ที่ไหน ส่งอะไรออกนอกเครื่อง เก็บนานเท่าไร
   - Output: `docs/privacy.md` (DPIA-lite) และป้ายแจ้ง CCTV ถ้าเก็บข้อมูลเอง
   - Verify: เอกสารระบุว่าส่งออกเฉพาะ counts/boxes, ไม่มีภาพหรือป้ายทะเบียนใน git/MLflow
-- [ ] **phase-2-d** Freeze class taxonomy
+- [x] **phase-2-d** Freeze class taxonomy
   - Goal: ยืนยัน 9 class และลำดับใน `configs/data/thai_traffic.yaml` (เปลี่ยนลำดับภายหลัง checkpoint เดิมจะใช้ไม่ได้)
   - Output: `docs/labeling_guide.md` นิยามแต่ละ class พร้อมรูปตัวอย่างและกรณีกำกวม (pickup vs truck, van vs car)
   - Verify: `make test` ผ่าน (`test_every_config_mapping_points_to_a_real_class`)
 
 ## Phase 3 — Data ("become one with the data")
 
-- [ ] **phase-3-a** License register
+- [x] **phase-3-a** License register
   - Goal: บันทึก license ทุก dataset/model ก่อนดาวน์โหลด
   - Output: `docs/licenses.md` ตาราง: name, license, commercial OK?, ใช้ใน phase ไหน
   - Verify: ทุก source ใน `source_mappings` มีแถวใน `docs/licenses.md`

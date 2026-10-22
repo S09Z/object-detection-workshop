@@ -129,13 +129,20 @@ def hf_metadata_to_coco(
     return coco.to_dict()
 
 
-def coco_passthrough(root: Path, out: Path, annotations: str, images: str) -> dict:
+def coco_passthrough(
+    root: Path,
+    out: Path,
+    annotations: str,
+    images: str,
+    camera_id_regex: str | None = None,
+) -> dict:
     images_dir = out / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
     coco = json.loads((root / annotations).read_text(encoding="utf-8"))
     for img in coco["images"]:
         shutil.copy2(root / images / img["file_name"], images_dir / Path(img["file_name"]).name)
         img["file_name"] = Path(img["file_name"]).name
+        img.update(_camera_id(img["file_name"], camera_id_regex))
     return coco
 
 

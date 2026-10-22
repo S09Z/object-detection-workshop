@@ -108,7 +108,13 @@ def class_names_for(src: dict[str, Any], root: Path) -> list[str]:
 def convert(src: dict[str, Any], root: Path, out: Path) -> dict[str, Any]:
     fmt = src["format"]
     if fmt == "coco":
-        return coco_passthrough(root, out, src["annotations"], src.get("images", "."))
+        return coco_passthrough(
+            root,
+            out,
+            src["annotations"],
+            src.get("images", "."),
+            src.get("camera_id_regex"),
+        )
     if fmt == "mio_tcd":
         return mio_tcd_to_coco(
             root,

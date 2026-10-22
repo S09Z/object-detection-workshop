@@ -268,3 +268,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none (taxi -> car recorded in thai_traffic.yaml)
 - Notes for next session: (1) the Universe page says 93 images but the v1 export has 210 = 70 source frames x 3 Roboflow augmentations (only the `train` subdir is used). With no `camera_id` they split per image, so augmented copies of one frame land in different splits (leakage: tuk_tuk is in valid 11 / test 7). Fix before training: group by the source frame (strip `_jpg.rf.<hash>`) or by clip (`footage-N`) in `roboflow_thai`, or use a version without augmentation. (2) Only ~12 distinct tuk_tuk and ~9 distinct songthaew boxes exist, far below the 200 bar: record as a gap in phase-3-c or find more data. (3) After the WSL VM stopped overnight, 3,050 files in `data/raw/mio_tcd` and `reports/data_stats.json` were all NUL bytes (unflushed writes); rebuilt from the intact `data/_downloads/mio_tcd` cache and ran `sync`. Scan `data/` for all-NUL files after any abrupt WSL shutdown. (4) The Windows editor saved `.env` with CRLF; converted to LF. (5) `make` needs `uv` on PATH (`~/.local/bin`)
+
+### 2026-10-22 — fix augmentation leak in roboflow_thai (small fix)
+- Status: done (not a PLAN.md sub-task; follows the note in the previous entry)
+- Done: `coco_passthrough` takes `camera_id_regex` and sets `camera_id` on each image; `roboflow_thai` uses `^(.+_mp4)-\d+_jpg` so all 210 images (70 frames x 3 augmentations, one clip) form one group; re-converted and re-ran `make prepare`
+- Verify: new test `test_coco_passthrough_sets_camera_id_from_file_name` failed before the fix (TypeError) and passes after; `make prepare` -> train 6,568 / valid 821 / test 821; all roboflow_thai images are in train, so tuk_tuk 36 / songthaew 27 are train-only (valid/test = 0, no leakage); full `pytest -m "not gpu"` and ruff run before commit
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: valid/test now have no tuk_tuk or songthaew, so per-class metrics for them cannot be measured until more data (own footage or other sources) exists; the counts are still ~12 / ~9 distinct objects x 3 augmented copies, so 36 / 27 overstates diversity. `vd-download` does not read `.env`: `set -a; . ./.env; set +a` first

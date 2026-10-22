@@ -79,6 +79,9 @@ sources:
     subdir: train             # Roboflow COCO export: train/_annotations.coco.json
     annotations: _annotations.coco.json
     images: .
+    # 3 Roboflow augmentations per frame, all frames from one clip: group by clip so copies never
+    # straddle splits (name: <clip>_mp4-0022_jpg.rf.<hash>.jpg)
+    camera_id_regex: "^(.+_mp4)-\\d+_jpg"
     license: CC-BY-4.0
     commercial_ok: true
     notes: Thai classes incl. songtaew and Tuktuk. Tiny (93 images, version 1).

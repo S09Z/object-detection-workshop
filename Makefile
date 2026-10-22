@@ -3,6 +3,8 @@
 
 TRAIN_CONFIG ?= configs/train/rfdetr_small.yaml
 DVC_REMOTE ?= $(HOME)/dvc-store
+# macOS AirPlay Receiver owns :5000, so MLflow UI defaults to 5001
+MLFLOW_PORT ?= 5001
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -68,8 +70,8 @@ count: ## Line-crossing vehicle count demo video
 serve: ## FastAPI inference service on :8000
 	uv run --extra serve uvicorn vehicle_detect.serve.app:app --host 0.0.0.0 --port 8000
 
-mlflow: ## MLflow UI on :5000
-	uv run mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
+mlflow: ## MLflow UI on :5001 (override: MLFLOW_PORT=...)
+	uv run mlflow ui --backend-store-uri sqlite:///mlflow.db --port $(MLFLOW_PORT)
 
 repro: ## Re-run the DVC pipeline (only changed stages)
 	uv run dvc repro

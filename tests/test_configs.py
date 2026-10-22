@@ -22,3 +22,8 @@ def test_rtx5070_configs_keep_effective_batch_16(path):
     cfg = load_config(path)
     assert cfg["batch_size"] * cfg["grad_accum_steps"] == 16
     assert cfg["train_kwargs"]["amp_dtype"] == "bf16"
+
+
+def test_every_data_source_declares_license_and_commercial_flag():
+    for src in load_config("configs/data/sources.yaml")["sources"]:
+        assert "license" in src and "commercial_ok" in src, src["name"]

@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-21 · by: Claude (phase-1-f, RTX 5070 PC set up)
+> Last updated: 2026-10-22 · by: Claude (phase-3-b, partial: + roboflow_thai)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (now on the RTX 5070 PC, WSL2) |
-| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed`, `coco`, `mio_tcd` done; Roboflow Thai, clips pending) |
+| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed`, `coco`, `mio_tcd`, `roboflow_thai` done; clips pending) |
 | Status | `in progress` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-1-f: RTX 5070 / WSL2 set up, `make gpu-check` OK |
-| Next up | phase-3-b (Roboflow Thai + clips) → phase-3-c |
+| Last done | phase-3-b partial: `roboflow_thai` downloaded (REST, no SDK); data re-created on the 5070 PC |
+| Next up | phase-3-b clips (`data/samples/`, >= 5 min) → phase-3-c (tuk_tuk / songthaew are a gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -260,3 +260,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: `data/` is not on this machine yet (re-run `vd-download` or rsync from the Mac; ask the user before downloading); run `make dvc-init` here. nvidia-smi lives in /usr/lib/wsl/lib, keep it on PATH when scripting wsl. Peak VRAM / s-per-epoch still unmeasured
+
+### 2026-10-22 — phase-3-b Roboflow Thai (partial) + data restored on the 5070 PC
+- Status: partial (box not ticked; clips in `data/samples/` still missing)
+- Done: user chose `classification-chickhen/thai-traffic-aud0j` v1 (CC BY 4.0, page read 2026-10-22) and `taxi -> car`; `sources.yaml` slug, `source_mappings` (Car, truck, bus, motorcycle, van, taxi, pickup truck, songtaew, Tuktuk) and `docs/licenses.md` row; the `roboflow` hub now calls the REST export API with urllib + zipfile instead of the `roboflow` SDK (not a dependency; test added); `dvc-init` (`~/dvc-store`); re-ran `vd-download` for visaitech, coco, mio_tcd
+- Verify: `data/raw`: visaitech 293 / 1,506, coco 3,000 / 32,152, mio_tcd 5,000 / 16,941, roboflow_thai 210 images / 3,003 boxes. pytest 29 passed, ruff clean. `make prepare`: train 6,568 / valid 821 / test 821; train boxes car 15,293, pickup 2,483, van 587, bus 1,125, truck 1,892, motorcycle 1,895, bicycle 936, **tuk_tuk 18, songthaew 24**
+- MLflow run / DVC rev: n/a
+- Decisions: none (taxi -> car recorded in thai_traffic.yaml)
+- Notes for next session: (1) the Universe page says 93 images but the v1 export has 210 = 70 source frames x 3 Roboflow augmentations (only the `train` subdir is used). With no `camera_id` they split per image, so augmented copies of one frame land in different splits (leakage: tuk_tuk is in valid 11 / test 7). Fix before training: group by the source frame (strip `_jpg.rf.<hash>`) or by clip (`footage-N`) in `roboflow_thai`, or use a version without augmentation. (2) Only ~12 distinct tuk_tuk and ~9 distinct songthaew boxes exist, far below the 200 bar: record as a gap in phase-3-c or find more data. (3) After the WSL VM stopped overnight, 3,050 files in `data/raw/mio_tcd` and `reports/data_stats.json` were all NUL bytes (unflushed writes); rebuilt from the intact `data/_downloads/mio_tcd` cache and ran `sync`. Scan `data/` for all-NUL files after any abrupt WSL shutdown. (4) The Windows editor saved `.env` with CRLF; converted to LF. (5) `make` needs `uv` on PATH (`~/.local/bin`)

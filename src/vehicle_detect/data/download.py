@@ -16,6 +16,8 @@ import os
 import shutil
 import subprocess
 import tarfile
+import urllib.request
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +28,15 @@ from vehicle_detect.data.convert import (
     mio_tcd_to_coco,
     yolo_to_coco,
 )
+
+
+def _roboflow_export_url(src: dict[str, Any]) -> str:
+    """Ask the Roboflow API for the COCO export link of a dataset version (no SDK needed)."""
+    path = f"{src['workspace']}/{src['project']}/{src['version']}/coco"
+    with urllib.request.urlopen(
+        f"https://api.roboflow.com/{path}?api_key={os.environ['ROBOFLOW_API_KEY']}"
+    ) as resp:
+        return json.load(resp)["export"]["link"]
 
 
 def fetch(src: dict[str, Any], dest: Path) -> Path:
@@ -74,11 +85,12 @@ def fetch(src: dict[str, Any], dest: Path) -> Path:
         api.authenticate()
         api.dataset_download_files(src["dataset"], path=str(dest), unzip=True)
     elif hub == "roboflow":
-        from roboflow import Roboflow  # uv add --group data roboflow
-
-        rf = Roboflow(api_key=os.environ["ROBOFLOW_API_KEY"])
-        project = rf.workspace(src["workspace"]).project(src["project"])
-        project.version(src["version"]).download("coco", location=str(dest))
+        dest.mkdir(parents=True, exist_ok=True)
+        archive = dest / "export.zip"
+        urllib.request.urlretrieve(_roboflow_export_url(src), archive)
+        with zipfile.ZipFile(archive) as zf:
+            zf.extractall(dest)
+        archive.unlink()
     else:
         raise ValueError(f"unknown hub: {hub}")
     return dest / src.get("subdir", "")

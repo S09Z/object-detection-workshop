@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-1-d)
+> Last updated: 2026-10-20 · by: Claude (phase-1-e)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-1 — Setup & harness |
-| Current sub-task | **phase-1-e**: MLflow tracking |
+| Current sub-task | **phase-1-f**: RTX 5070 training machine (needs the PC; Phase 2 can start on the Mac meanwhile) |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-1-d: DVC initialised, remote `storage` = `~/dvc-store` (local, per machine) |
-| Next up | phase-1-e → phase-1-f (needs the RTX 5070 PC) |
+| Last done | phase-1-e: local MLflow (`sqlite:///mlflow.db`), UI on :5001 |
+| Next up | phase-1-f (RTX 5070 PC) → phase-2-a |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -151,3 +151,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: NAS path and backup plan are still open (default `~/dvc-store` has no backup). On the RTX 5070 PC run `make dvc-init DVC_REMOTE=<path>` there. `dvc status -c` warns that `models/export` has no version info until the pipeline has run once
+
+### 2026-10-20 — phase-1-e MLflow tracking
+- Status: done
+- Done: chose local tracking (`sqlite:///mlflow.db`, set in `.env` / `.env.example`, same default as `vd-train`); `make mlflow` now serves on :5001 (`MLFLOW_PORT` to override) because macOS AirPlay Receiver answers on :5000 with 403; README updated
+- Verify: logged run `phase-1-e-smoke` to `vehicle-detect`; `make mlflow` UI returned HTTP 200 and the run was returned by the search API; the smoke run was then deleted
+- MLflow run / DVC rev: n/a
+- Decisions: none (local vs central server can be revisited if more than one machine needs to share runs)
+- Notes for next session: the 5070 PC keeps its own `mlflow.db`; copy or point `MLFLOW_TRACKING_URI` at a shared location if you want runs from both machines in one UI

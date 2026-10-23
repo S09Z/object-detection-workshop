@@ -44,7 +44,7 @@
   - Goal: `make dvc-init` ให้ remote อยู่บน local disk หรือ NAS (D-015) โดย default คือ `~/dvc-store` ส่วน NAS ให้ใช้ `DVC_REMOTE=/mnt/nas/...`
   - Output: `.dvc/config` (commit) ส่วน path เฉพาะเครื่องอยู่ใน `.dvc/config.local` (ไม่ commit) และมีแผน backup ของ disk/NAS
   - Verify: `uv run dvc remote list` แสดง `storage` และ `uv run dvc push` ไฟล์ทดสอบ 1 ไฟล์แล้วเห็นใน remote
-- [ ] **phase-1-e** MLflow tracking
+- [x] **phase-1-e** MLflow tracking
   - Goal: เลือก local (`./mlruns`) หรือ server กลาง, ตั้งใน `.env`
   - Verify: `make mlflow` เปิด UI ได้ และ log run ทดสอบ 1 run เห็นใน UI
 - [ ] **phase-1-f** เครื่อง train RTX 5070 (CUDA 13)

@@ -47,7 +47,7 @@
 - [x] **phase-1-e** MLflow tracking
   - Goal: เลือก local (`./mlruns`) หรือ server กลาง, ตั้งใน `.env`
   - Verify: `make mlflow` เปิด UI ได้ และ log run ทดสอบ 1 run เห็นใน UI
-- [ ] **phase-1-f** เครื่อง train RTX 5070 (CUDA 13)
+- [x] **phase-1-f** เครื่อง train RTX 5070 (CUDA 13)
   - Goal: Windows → WSL2 Ubuntu 24.04 + NVIDIA driver ≥ 580 บน Windows แล้ว clone repo ไว้ที่ `~/` ใน WSL
   - Output: `uv sync` ได้ torch cu130 และบันทึก driver/GPU ใน `PROGRESS.md`
   - Verify: `make gpu-check` พิมพ์ `OK: CUDA kernels run on this GPU` และระบุ `sm_120`, `bf16 supported: True`

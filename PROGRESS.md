@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-3-a)
+> Last updated: 2026-10-21 · by: Claude (phase-1-f, RTX 5070 PC set up)
 
 | Field | Value |
 |---|---|
-| Current phase | phase-3 — Data (phase-1-f waits for the RTX 5070 PC) |
-| Current sub-task | **phase-3-b**: download and convert to COCO (`make download`) |
-| Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-a: `docs/licenses.md` (datasets, models, libraries) |
-| Next up | phase-3-b → phase-3-c; phase-1-f when on the 5070 PC |
+| Current phase | phase-3 — Data (now on the RTX 5070 PC, WSL2) |
+| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed`, `coco`, `mio_tcd` done; Roboflow Thai, clips pending) |
+| Status | `in progress` <!-- not started / in progress / blocked / done --> |
+| Last done | phase-1-f: RTX 5070 / WSL2 set up, `make gpu-check` OK |
+| Next up | phase-3-b (Roboflow Thai + clips) → phase-3-c |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none |
 
@@ -27,9 +27,9 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 | Check | Result | When |
 |---|---|---|
 | ruff check / format | ✅ pass (project ruff via uv; an older ruff had missed 2 E501 + 1 format diff in convert.py) | 2026-10-20 |
-| pytest `-m "not gpu"` | ✅ 20 passed (run without torch) | 2026-10-20 |
+| `./init.sh` (WSL2) | ✅ OK | 2026-10-21 |
 | `uv sync --all-groups` | ✅ pass (Mac, Python 3.13 venv) | 2026-10-20 |
-| `make gpu-check` (RTX 5070) | ⏳ not run yet | — |
+| `make gpu-check` (RTX 5070) | ✅ OK, sm_120, bf16 True | 2026-10-21 |
 
 ### Key metrics (best so far)
 
@@ -210,3 +210,53 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none (follows D-010)
 - Notes for next session: licenses come from the project config, not from reading the source pages; the `Verified` column is "No" everywhere, so do the checklist at the bottom of the file before `make download` in phase-3-b. `roboflow_thai` workspace/project are still `CHANGE_ME`
+
+### 2026-10-20 — phase-3-b dataset download (partial: visaitech_mixed)
+- Status: partial (box not ticked)
+- Done: read the dataset card (CC BY 4.0, commercial OK with attribution); pinned `revision` de35185 in `sources.yaml`; `make download` fetched images/labels only (27 MB, skipped the 12 GB videos) and wrote `data/raw/visaitech_mixed/{images,annotations.coco.json,SOURCE.json}`; fixed `camera_id_regex` so the 23 `VEHICLES__*` frames get a camera id (they were silently ungrouped, which would have split them per frame); updated the `visaitech_mixed` row in `docs/licenses.md`
+- Verify: partial. `visaitech_mixed`: 293 images, 1,506 boxes (matches the card), SOURCE.json present, licenses.md row has original and mirror license; camera ids V001–V005 + VEHICLES, none missing. The PLAN criterion covers every source (COCO subset, MIO-TCD/UA-DETRAC, Roboflow Thai, ≥ 5 min of clips in `data/samples/`) and those were not downloaded
+- MLflow run / DVC rev: n/a (`dvc add data/raw` is phase-3-g)
+- Decisions: none
+- Notes for next session: only 5 + 1 camera groups here, so a 0.8/0.1/0.1 split will hit the new empty-split guard on this source alone; merge with the other sources before `make prepare`. `visaitech_mixed` is not in `source_mappings` on purpose (its 4-wheeler class mixes car/pickup/van/bus/truck). Next downloads need user permission and the license checklist in `docs/licenses.md`
+
+### 2026-10-20 — phase-3-b COCO vehicle subset (partial)
+- Status: partial (box not ticked)
+- Done: read COCO terms of use (annotations CC BY 4.0; images under Flickr terms); new download hub `fiftyone_zoo` in `data/download.py` (sets `FIFTYONE_DATASET_ZOO_DIR` to the cache, downloads only images with the requested classes); source `coco` in `sources.yaml` (3,000 images, seed 42); `docs/licenses.md` row updated; test that every source declares `license` and `commercial_ok`
+- Verify: `data/raw/coco/{images,annotations.coco.json,SOURCE.json}` present; 3,000 images, 32,152 boxes, 0 missing image files; after `source_mappings`: car 6,892, bus 902, truck 1,553, motorcycle 1,427, bicycle 1,108; `pytest -m "not gpu"` 26 passed. The PLAN criterion still needs MIO-TCD/UA-DETRAC, Roboflow Thai and ≥ 5 min of clips
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: the first attempt failed after 1.3 GB on a DNS error; a re-run resumed from the cache. `data/_downloads/coco` (1.4 GB) is a cache and can be deleted once DVC tracks `data/raw`. COCO images have no camera ids, so they split per frame (fine for stills). pickup, van, tuk_tuk and songthaew have no boxes yet
+
+### 2026-10-20 — phase-3-c exploratory `make prepare` (not ticked)
+- Status: exploration only; phase-3-c stays unchecked
+- Done: ran `make prepare` on what is downloaded. Only `coco` is mapped (visaitech_mixed is deliberately not in `source_mappings`; mio_tcd and roboflow_thai are not downloaded). Output is `data/processed/coco/{train,valid,test}` (527 MB, git-ignored) and `reports/data_stats.json`
+- Result: train 2,400 / valid 300 / test 300 images. Train boxes: car 5,589, bus 717, truck 1,225, motorcycle 1,099, bicycle 947; **pickup, van, tuk_tuk, songthaew = 0** in every split. Valid/test are thin for some classes (valid bicycle 68, test bus 82), so per-class metrics will be noisy
+- Gaps vs the PLAN criterion (every class ≥ 200 train boxes): pickup, van, tuk_tuk, songthaew (need MIO-TCD for pickup/van, Roboflow Thai for songthaew, own footage for tuk_tuk)
+- Other observations: all 3,000 COCO images are split per frame (no camera ids; the new warning fired), which is fine for stills; 60 of 9,577 train boxes have `iscrowd=1` and are kept as normal boxes; 40% of train boxes are smaller than 32×32 px
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: consider dropping `iscrowd=1` boxes in `remap_coco`/`prepare` (not changed here). Re-run `make prepare` after more sources are added; do not train on this split, it has 4 empty classes
+
+### 2026-10-20 — drop iscrowd boxes in remap_coco (small fix)
+- Status: done (not a PLAN.md sub-task)
+- Done: `remap_coco` skips `iscrowd=1` boxes; test `test_remap_drops_crowd_boxes` (failed before the fix). Follows the observation in the exploratory prepare entry above
+- Verify: `pytest -m "not gpu"` 27 passed; `make prepare` coco box counts now exclude the crowd boxes
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: phase-3-c is still unchecked (4 classes have no boxes)
+
+### 2026-10-20 — phase-3-b MIO-TCD subset (partial)
+- Status: partial (box not ticked)
+- Done: read the MIO-TCD page (CC BY-NC-SA 4.0, citation required, localization tar = 3.74 GB); new download hub `http_tar` (curl with resume + safe tar extract) and `mio_tcd` converter in `data/convert.py` (half the subset favours pickup_truck / work_van, drops degenerate boxes); source `mio_tcd` (`enabled: false`, run with `--only`); licenses.md row updated; converter test
+- Verify: `data/raw/mio_tcd` has 5,000 images / 16,941 boxes + SOURCE.json; `pytest -m "not gpu"` 28 passed. After `make prepare` (coco + mio_tcd): train 6,400 / valid 800 / test 800 images; train boxes car 13,994, pickup 2,300, van 463, bus 1,126, truck 1,857, motorcycle 1,201, bicycle 936, **tuk_tuk 0, songthaew 0**. Pickup and van now pass the ≥ 200 train-box bar; tuk_tuk and songthaew do not (Roboflow Thai / own footage)
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: `prepare` now mixes a non-commercial source (MIO-TCD) with CC BY ones in one split, so these weights are learning-only (D-010); a commercial split needs a per-source flag in `thai_traffic.yaml` (not implemented). `data/_downloads/mio_tcd` is a 7.0 GB cache (tar + extracted) and can be deleted. MIO-TCD has no camera ids, so same-camera frames can land in different splits; motorcycle/bicycle counts from it are small (63 / 102 boxes)
+
+### 2026-10-21 — phase-1-f RTX 5070 training machine
+- Status: done
+- Done: Windows driver 617.14 (>= 580); existing WSL2 Ubuntu 24.04; apt build-essential/make/libgl1/libglib2.0-0, uv 0.13.4; cloned to `~/object-detection-workshop` (WSL home), branch development; `make setup` (uv sync --all-groups from the Mac lock; cu130 wheels installed fine on Linux)
+- Verify: `make gpu-check` -> torch 2.14.1+cu130, RTX 5070 11.9 GB sm_120, bf16 supported: True, OK: CUDA kernels run on this GPU; `./init.sh` OK
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: `data/` is not on this machine yet (re-run `vd-download` or rsync from the Mac; ask the user before downloading); run `make dvc-init` here. nvidia-smi lives in /usr/lib/wsl/lib, keep it on PATH when scripting wsl. Peak VRAM / s-per-epoch still unmeasured

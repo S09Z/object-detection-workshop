@@ -30,12 +30,16 @@ def remap_coco(
     name_mapping: dict[str, str | None],
     target_classes: list[str],
 ) -> dict[str, Any]:
-    """Return a new COCO dict with remapped categories; dropped boxes are removed."""
+    """Return a new COCO dict with remapped categories; dropped and crowd boxes are removed.
+
+    `iscrowd=1` boxes cover a group of objects, not one vehicle, so they would teach the
+    detector a wrong box.
+    """
     cat_map = build_category_map(coco["categories"], name_mapping, target_classes)
     annotations = []
     for ann in coco["annotations"]:
         new_id = cat_map.get(ann["category_id"])
-        if new_id is None:
+        if new_id is None or ann.get("iscrowd"):
             continue
         annotations.append({**ann, "category_id": new_id})
     categories = [

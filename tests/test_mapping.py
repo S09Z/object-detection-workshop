@@ -42,3 +42,10 @@ def test_every_config_mapping_points_to_a_real_class():
     for source, mapping in cfg["source_mappings"].items():
         for target in mapping.values():
             assert target is None or target in cfg["classes"], (source, target)
+
+
+def test_remap_drops_crowd_boxes():
+    coco = _coco()
+    coco["annotations"][0]["iscrowd"] = 1  # one box covering a group of cars
+    out = remap_coco(coco, {"car": "car", "truck": "truck"}, CLASSES)
+    assert [a["category_id"] for a in out["annotations"]] == [CLASSES.index("truck")]

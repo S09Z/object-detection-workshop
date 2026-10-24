@@ -38,7 +38,7 @@ session doesn't reverse it without a reason or repeat a discussion that has alre
 |---|---|---|
 | D-001 | Primary detector: RF-DETR (Apache-2.0); YOLO26 is optional only | Accepted |
 | D-002 | The real-time metric is end-to-end FPS + p99 on the target device | Accepted |
-| D-003 | 9-class Thai traffic taxonomy, fixed order | Proposed (user to confirm in phase-2-d) |
+| D-003 | 9-class Thai traffic taxonomy, fixed order | Accepted (user confirmed 2026-10-20) |
 | D-004 | Split data by camera/video, not by frame | Accepted |
 | D-005 | Inference via ONNX Runtime / TensorRT, independent of PyTorch | Accepted |
 | D-006 | FP16 by default; INT8 only if FP16 doesn't pass | Accepted |
@@ -79,7 +79,7 @@ session doesn't reverse it without a reason or repeat a discussion that has alre
 - Revisit if: the use case changes to processing that isn't real-time (e.g. batch overnight)
 
 ## D-003 — 9-class Thai traffic taxonomy, fixed order
-- Date: 2026-10-20 · Phase: setup → phase-2-d · Status: Proposed
+- Date: 2026-10-20 · Phase: setup → phase-2-d · Status: Accepted
 - Decided by: agent (needs user approval)
 - Context: the 5 COCO vehicle classes don't separate pickup, songthaew or tuk-tuk, which are common in Thailand
 - Decision: car, pickup, van, bus, truck, motorcycle, bicycle, tuk_tuk, songthaew, in this order (order = class_id)

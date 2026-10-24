@@ -14,11 +14,29 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
+import tarfile
+import urllib.request
+import zipfile
 from pathlib import Path
 from typing import Any
 
 from vehicle_detect.config import load_config
-from vehicle_detect.data.convert import coco_passthrough, hf_metadata_to_coco, yolo_to_coco
+from vehicle_detect.data.convert import (
+    coco_passthrough,
+    hf_metadata_to_coco,
+    mio_tcd_to_coco,
+    yolo_to_coco,
+)
+
+
+def _roboflow_export_url(src: dict[str, Any]) -> str:
+    """Ask the Roboflow API for the COCO export link of a dataset version (no SDK needed)."""
+    path = f"{src['workspace']}/{src['project']}/{src['version']}/coco"
+    with urllib.request.urlopen(
+        f"https://api.roboflow.com/{path}?api_key={os.environ['ROBOFLOW_API_KEY']}"
+    ) as resp:
+        return json.load(resp)["export"]["link"]
 
 
 def fetch(src: dict[str, Any], dest: Path) -> Path:
@@ -35,6 +53,31 @@ def fetch(src: dict[str, Any], dest: Path) -> Path:
             local_dir=dest,
             token=os.getenv("HF_TOKEN"),
         )
+    elif hub == "fiftyone_zoo":
+        # Downloads only the images that contain `classes` (not the full 18 GB COCO train set).
+        os.environ["FIFTYONE_DATASET_ZOO_DIR"] = str(dest.resolve())  # keep it out of ~/fiftyone
+        import fiftyone.zoo as foz
+
+        foz.download_zoo_dataset(
+            src["zoo_name"],
+            split=src["split"],
+            label_types=["detections"],
+            classes=src["classes"],
+            max_samples=src.get("max_samples"),
+            seed=src.get("seed", 42),
+            shuffle=True,
+        )
+    elif hub == "http_tar":
+        dest.mkdir(parents=True, exist_ok=True)
+        archive = dest / Path(src["url"]).name
+        # curl resumes a partial download (-C -); the archive is multi-GB
+        subprocess.run(
+            ["curl", "-L", "--fail", "-C", "-", "-o", str(archive), src["url"]], check=True
+        )
+        if not (dest / ".extracted").exists():
+            with tarfile.open(archive) as tar:
+                tar.extractall(dest, filter="data")
+            (dest / ".extracted").touch()
     elif hub == "kaggle":
         from kaggle.api.kaggle_api_extended import KaggleApi  # needs ~/.kaggle/kaggle.json
 
@@ -42,11 +85,12 @@ def fetch(src: dict[str, Any], dest: Path) -> Path:
         api.authenticate()
         api.dataset_download_files(src["dataset"], path=str(dest), unzip=True)
     elif hub == "roboflow":
-        from roboflow import Roboflow  # uv add --group data roboflow
-
-        rf = Roboflow(api_key=os.environ["ROBOFLOW_API_KEY"])
-        project = rf.workspace(src["workspace"]).project(src["project"])
-        project.version(src["version"]).download("coco", location=str(dest))
+        dest.mkdir(parents=True, exist_ok=True)
+        archive = dest / "export.zip"
+        urllib.request.urlretrieve(_roboflow_export_url(src), archive)
+        with zipfile.ZipFile(archive) as zf:
+            zf.extractall(dest)
+        archive.unlink()
     else:
         raise ValueError(f"unknown hub: {hub}")
     return dest / src.get("subdir", "")
@@ -64,7 +108,23 @@ def class_names_for(src: dict[str, Any], root: Path) -> list[str]:
 def convert(src: dict[str, Any], root: Path, out: Path) -> dict[str, Any]:
     fmt = src["format"]
     if fmt == "coco":
-        return coco_passthrough(root, out, src["annotations"], src.get("images", "."))
+        return coco_passthrough(
+            root,
+            out,
+            src["annotations"],
+            src.get("images", "."),
+            src.get("camera_id_regex"),
+        )
+    if fmt == "mio_tcd":
+        return mio_tcd_to_coco(
+            root,
+            out,
+            src["annotations"],
+            src["images"],
+            src["max_images"],
+            src.get("prefer_classes", []),
+            src.get("seed", 42),
+        )
     names = class_names_for(src, root)
     splits = src.get("splits", ["train", "val"])
     regex = src.get("camera_id_regex")

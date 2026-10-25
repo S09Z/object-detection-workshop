@@ -10,13 +10,13 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-3-a)
+> Last updated: 2026-10-20 · by: Claude (phase-3-b, partial)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (phase-1-f waits for the RTX 5070 PC) |
-| Current sub-task | **phase-3-b**: download and convert to COCO (`make download`) |
-| Status | `not started` <!-- not started / in progress / blocked / done --> |
+| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed` done; others pending) |
+| Status | `in progress` <!-- not started / in progress / blocked / done --> |
 | Last done | phase-3-a: `docs/licenses.md` (datasets, models, libraries) |
 | Next up | phase-3-b → phase-3-c; phase-1-f when on the 5070 PC |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
@@ -210,3 +210,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none (follows D-010)
 - Notes for next session: licenses come from the project config, not from reading the source pages; the `Verified` column is "No" everywhere, so do the checklist at the bottom of the file before `make download` in phase-3-b. `roboflow_thai` workspace/project are still `CHANGE_ME`
+
+### 2026-10-20 — phase-3-b dataset download (partial: visaitech_mixed)
+- Status: partial (box not ticked)
+- Done: read the dataset card (CC BY 4.0, commercial OK with attribution); pinned `revision` de35185 in `sources.yaml`; `make download` fetched images/labels only (27 MB, skipped the 12 GB videos) and wrote `data/raw/visaitech_mixed/{images,annotations.coco.json,SOURCE.json}`; fixed `camera_id_regex` so the 23 `VEHICLES__*` frames get a camera id (they were silently ungrouped, which would have split them per frame); updated the `visaitech_mixed` row in `docs/licenses.md`
+- Verify: partial. `visaitech_mixed`: 293 images, 1,506 boxes (matches the card), SOURCE.json present, licenses.md row has original and mirror license; camera ids V001–V005 + VEHICLES, none missing. The PLAN criterion covers every source (COCO subset, MIO-TCD/UA-DETRAC, Roboflow Thai, ≥ 5 min of clips in `data/samples/`) and those were not downloaded
+- MLflow run / DVC rev: n/a (`dvc add data/raw` is phase-3-g)
+- Decisions: none
+- Notes for next session: only 5 + 1 camera groups here, so a 0.8/0.1/0.1 split will hit the new empty-split guard on this source alone; merge with the other sources before `make prepare`. `visaitech_mixed` is not in `source_mappings` on purpose (its 4-wheeler class mixes car/pickup/van/bus/truck). Next downloads need user permission and the license checklist in `docs/licenses.md`

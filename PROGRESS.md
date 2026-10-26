@@ -10,12 +10,12 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-3-b, partial)
+> Last updated: 2026-10-20 · by: Claude (phase-3-b, partial: visaitech + coco)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (phase-1-f waits for the RTX 5070 PC) |
-| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed` done; others pending) |
+| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed` and `coco` done; MIO-TCD/UA-DETRAC, Roboflow Thai, clips pending) |
 | Status | `in progress` <!-- not started / in progress / blocked / done --> |
 | Last done | phase-3-a: `docs/licenses.md` (datasets, models, libraries) |
 | Next up | phase-3-b → phase-3-c; phase-1-f when on the 5070 PC |
@@ -218,3 +218,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a (`dvc add data/raw` is phase-3-g)
 - Decisions: none
 - Notes for next session: only 5 + 1 camera groups here, so a 0.8/0.1/0.1 split will hit the new empty-split guard on this source alone; merge with the other sources before `make prepare`. `visaitech_mixed` is not in `source_mappings` on purpose (its 4-wheeler class mixes car/pickup/van/bus/truck). Next downloads need user permission and the license checklist in `docs/licenses.md`
+
+### 2026-10-20 — phase-3-b COCO vehicle subset (partial)
+- Status: partial (box not ticked)
+- Done: read COCO terms of use (annotations CC BY 4.0; images under Flickr terms); new download hub `fiftyone_zoo` in `data/download.py` (sets `FIFTYONE_DATASET_ZOO_DIR` to the cache, downloads only images with the requested classes); source `coco` in `sources.yaml` (3,000 images, seed 42); `docs/licenses.md` row updated; test that every source declares `license` and `commercial_ok`
+- Verify: `data/raw/coco/{images,annotations.coco.json,SOURCE.json}` present; 3,000 images, 32,152 boxes, 0 missing image files; after `source_mappings`: car 6,892, bus 902, truck 1,553, motorcycle 1,427, bicycle 1,108; `pytest -m "not gpu"` 26 passed. The PLAN criterion still needs MIO-TCD/UA-DETRAC, Roboflow Thai and ≥ 5 min of clips
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: the first attempt failed after 1.3 GB on a DNS error; a re-run resumed from the cache. `data/_downloads/coco` (1.4 GB) is a cache and can be deleted once DVC tracks `data/raw`. COCO images have no camera ids, so they split per frame (fine for stills). pickup, van, tuk_tuk and songthaew have no boxes yet

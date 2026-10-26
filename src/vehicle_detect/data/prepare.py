@@ -8,16 +8,21 @@ Expected raw layout (one folder per source dataset, key must match `source_mappi
 Output layout is what RF-DETR expects:
 
     data/processed/coco/train/_annotations.coco.json + images
+
+`--commercial-only` builds a second split from sources with `commercial_ok: true` in
+sources.yaml (D-010) into data/processed/coco_commercial. A source missing from sources.yaml
+counts as non-commercial.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import shutil
 from pathlib import Path
 from typing import Any
 
-from vehicle_detect.config import cli_config
+from vehicle_detect.config import load_config
 from vehicle_detect.data.mapping import class_histogram, remap_coco
 from vehicle_detect.data.split import group_split
 
@@ -38,13 +43,33 @@ def merge(datasets: list[dict[str, Any]]) -> dict[str, Any]:
     return {"images": images, "annotations": annotations, "categories": datasets[0]["categories"]}
 
 
+def commercial_sources(sources_cfg: dict[str, Any]) -> set[str]:
+    """Names of sources whose licence allows commercial use (`commercial_ok: true`)."""
+    return {s["name"] for s in sources_cfg.get("sources", []) if s.get("commercial_ok") is True}
+
+
 def main() -> None:
-    cfg = cli_config("Prepare training data", "configs/data/thai_traffic.yaml")
-    raw, out = Path(cfg["paths"]["raw"]), Path(cfg["paths"]["processed"]) / "coco"
-    classes = cfg["classes"]
+    parser = argparse.ArgumentParser(description="Prepare training data")
+    parser.add_argument("--config", default="configs/data/thai_traffic.yaml")
+    parser.add_argument(
+        "--commercial-only",
+        action="store_true",
+        help="use only commercial_ok sources -> data/processed/coco_commercial",
+    )
+    args = parser.parse_args()
+    cfg = load_config(args.config)
+    raw, classes = Path(cfg["paths"]["raw"]), cfg["classes"]
+    suffix = "_commercial" if args.commercial_only else ""
+    out = Path(cfg["paths"]["processed"]) / f"coco{suffix}"
+    allowed = None
+    if args.commercial_only:
+        allowed = commercial_sources(load_config(cfg["paths"]["sources"]))
 
     remapped = []
     for source, mapping in cfg["source_mappings"].items():
+        if allowed is not None and source not in allowed:
+            print(f"[skip] {source}: not commercial_ok (learning only)")
+            continue
         ann_path = raw / source / "annotations.coco.json"
         if not ann_path.exists():
             print(f"[skip] {source}: {ann_path} not found")
@@ -77,7 +102,9 @@ def main() -> None:
         stats[name] = {"images": len(ds["images"]), "classes": class_histogram(ds)}
 
     Path("reports").mkdir(exist_ok=True)
-    Path("reports/data_stats.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
+    Path(f"reports/data_stats{suffix}.json").write_text(
+        json.dumps(stats, indent=2), encoding="utf-8"
+    )
     print(json.dumps(stats, indent=2))
 
 

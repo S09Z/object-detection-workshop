@@ -285,3 +285,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: HANDOFF.md still says phase-1-f is pending and lists the older data counts; it is stale. PR state: #1-#6 merged (#1-#3 were redundant), #7-#10 draft. Per-source commercial flag for `prepare` is still not started
+
+### 2026-10-26 — per-source commercial flag in `prepare` (small change, not a PLAN.md sub-task)
+- Status: done
+- Done: `vd-prepare --commercial-only` (`make prepare-commercial`) keeps only sources with `commercial_ok: true` in `sources.yaml` (single source of truth, path in `thai_traffic.yaml` `paths.sources`; a source missing there counts as non-commercial) and writes `data/processed/coco_commercial` + `reports/data_stats_commercial.json`. The default run is unchanged. No DVC stage change (the commercial split is an on-demand output)
+- Verify: tests/test_prepare.py (3 tests: flag parsing, every mapped source exists in sources.yaml, end-to-end split excludes the learning source and the default run still includes it); ruff clean; `pytest -m "not gpu"` 33 passed. Real run on the Mac (coco only, roboflow_thai not downloaded here): train 2,400 / valid 300 / test 300; pickup, van, tuk_tuk, songthaew = 0
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: a model trained on `coco_commercial` still needs the image terms of COCO reviewed (docs/licenses.md); pickup/van come only from MIO-TCD, so the commercial set has no pickup/van until another licensed source exists

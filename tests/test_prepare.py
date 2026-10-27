@@ -2,6 +2,7 @@ import json
 import sys
 
 import yaml
+from PIL import Image
 
 from vehicle_detect.config import load_config
 from vehicle_detect.data import prepare
@@ -29,7 +30,7 @@ def _write_source(raw, name, n_cams):
     (raw / name / "images").mkdir(parents=True)
     images, anns = [], []
     for i in range(n_cams):
-        (raw / name / "images" / f"{i}.jpg").write_bytes(b"x")
+        Image.new("RGB", (64, 64)).save(raw / name / "images" / f"{i}.jpg")
         images.append({"id": i, "file_name": f"{i}.jpg", "camera_id": f"{name}{i}"})
         anns.append({"id": i, "image_id": i, "category_id": 1, "bbox": [0, 0, 5, 5], "area": 25})
     coco = {"images": images, "annotations": anns, "categories": [{"id": 1, "name": "Car"}]}
@@ -67,3 +68,29 @@ def test_commercial_only_split_excludes_learning_sources(tmp_path, monkeypatch):
     prepare.main()
     stats = json.loads((tmp_path / "reports/data_stats.json").read_text())
     assert sum(s["images"] for s in stats.values()) == 16
+
+
+def test_unreadable_image_is_skipped_and_stale_output_is_cleared(tmp_path, monkeypatch):
+    raw = tmp_path / "raw"
+    _write_source(raw, "free", 8)
+    # image 3 is truncated
+    good = (raw / "free/images/3.jpg").read_bytes()
+    (raw / "free/images/3.jpg").write_bytes(good[: len(good) // 2])
+    stale = tmp_path / "processed/coco/train/old_run.jpg"
+    stale.parent.mkdir(parents=True)
+    stale.write_bytes(b"stale")
+    cfg = {
+        "classes": ["car"],
+        "source_mappings": {"free": {"Car": "car"}},
+        "paths": {"raw": str(raw), "processed": str(tmp_path / "processed")},
+        "split": {"train": 0.5, "valid": 0.25, "test": 0.25, "seed": 0, "group_by": "camera_id"},
+    }
+    (tmp_path / "cfg.yaml").write_text(yaml.safe_dump(cfg))
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", ["vd-prepare", "--config", "cfg.yaml"])
+    prepare.main()
+
+    stats = json.loads((tmp_path / "reports/data_stats.json").read_text())
+    assert sum(s["images"] for s in stats.values()) == 7
+    assert not stale.exists()
+    assert not list((tmp_path / "processed").rglob("free_3.jpg"))

@@ -226,3 +226,21 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: the first attempt failed after 1.3 GB on a DNS error; a re-run resumed from the cache. `data/_downloads/coco` (1.4 GB) is a cache and can be deleted once DVC tracks `data/raw`. COCO images have no camera ids, so they split per frame (fine for stills). pickup, van, tuk_tuk and songthaew have no boxes yet
+
+### 2026-10-20 — phase-3-c exploratory `make prepare` (not ticked)
+- Status: exploration only; phase-3-c stays unchecked
+- Done: ran `make prepare` on what is downloaded. Only `coco` is mapped (visaitech_mixed is deliberately not in `source_mappings`; mio_tcd and roboflow_thai are not downloaded). Output is `data/processed/coco/{train,valid,test}` (527 MB, git-ignored) and `reports/data_stats.json`
+- Result: train 2,400 / valid 300 / test 300 images. Train boxes: car 5,589, bus 717, truck 1,225, motorcycle 1,099, bicycle 947; **pickup, van, tuk_tuk, songthaew = 0** in every split. Valid/test are thin for some classes (valid bicycle 68, test bus 82), so per-class metrics will be noisy
+- Gaps vs the PLAN criterion (every class ≥ 200 train boxes): pickup, van, tuk_tuk, songthaew (need MIO-TCD for pickup/van, Roboflow Thai for songthaew, own footage for tuk_tuk)
+- Other observations: all 3,000 COCO images are split per frame (no camera ids; the new warning fired), which is fine for stills; 60 of 9,577 train boxes have `iscrowd=1` and are kept as normal boxes; 40% of train boxes are smaller than 32×32 px
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: consider dropping `iscrowd=1` boxes in `remap_coco`/`prepare` (not changed here). Re-run `make prepare` after more sources are added; do not train on this split, it has 4 empty classes
+
+### 2026-10-20 — drop iscrowd boxes in remap_coco (small fix)
+- Status: done (not a PLAN.md sub-task)
+- Done: `remap_coco` skips `iscrowd=1` boxes; test `test_remap_drops_crowd_boxes` (failed before the fix). Follows the observation in the exploratory prepare entry above
+- Verify: `pytest -m "not gpu"` 27 passed; `make prepare` coco box counts now exclude the crowd boxes
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: phase-3-c is still unchecked (4 classes have no boxes)

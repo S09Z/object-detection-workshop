@@ -352,3 +352,11 @@ Template (copy it for each entry):
 - Decisions: none
 - Notes for next session: **peak VRAM is NOT measured** (CLAUDE.md §6 still owes it): the sampler used `Sysnative
 vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-bit processes such as the chocolatey `make`; from Git Bash use `C:/Windows/System32/nvidia-smi.exe`). Re-run 1 epoch with a working sampler. The 2-epoch test mAP is high because valid/test share MIO-TCD camera views with train (camera-level leak, see `docs/label_issues.md`); do not read 0.599 as a real generalisation number. `uv sync` printed "Access is denied" on `orjson` (a process holds the .pyd); imports still work
+
+### 2026-10-29 — RTX 5070 peak VRAM and s/epoch (1-epoch smoke, native Windows)
+- Status: done (measurement; closes the VRAM item left open by the entry above)
+- Done: re-ran `rfdetr_small_rtx5070.yaml` with `epochs: 1`, output `runs/smoke_win_5070_1ep`, sampling `nvidia-smi` every 2 s (`C:/Windows/System32/nvidia-smi.exe` from Git Bash)
+- Verify: `uv run vd-train --config <smoke1.yaml>` -> exit 0. Peak GPU memory **6,398 MiB** of 12,227 (about 4.7 GB above the ~1.7 GB desktop baseline; nvidia-smi counts PyTorch's cached allocator pool, so the true need is lower). Batch 4 x accum 4, bf16, no OOM, so there is headroom for a larger physical batch. Wall 633 s for the whole command (about 9 min 30 s from first to last log line: model load, 1 train epoch, val, test). Epoch 1 val mAP50-95 (EMA) 0.537. GPU utilisation peaked at 82% but averaged only about 38% during the train window (22% over the whole run), so the GPU is partly starved; likely dataloader / CPU bound (`num_workers: 8`, 16 logical cores, Windows spawn). Not yet diagnosed
+- MLflow run / DVC rev: run `smoke-win-5070-1ep` (experiment vehicle-detect); `git_dirty=true` and no DVC data rev, so it does not count under D-017
+- Decisions: none
+- Notes for next session: before the real 50-epoch run, try `batch_size: 8` + `grad_accum_steps: 2` (same effective 16) and compare s/epoch and utilisation as one change; if utilisation stays low, look at dataloader workers / image decode

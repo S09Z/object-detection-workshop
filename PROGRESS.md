@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-29 · by: Claude (phase-3-b done, merged with the Mac's phase-3-d EDA)
+> Last updated: 2026-10-29 · by: Claude (phase-3-c done, with a recorded data gap)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (now on the RTX 5070 PC, WSL2) |
-| Current sub-task | **phase-3-c**: prepare + group split (tuk_tuk / songthaew gap; valid/test have none); phase-3-e Label QA follows |
+| Current sub-task | **phase-3-e**: Label QA (`notebooks/02_label_quality_fiftyone.ipynb`) |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-b: 4 datasets + 9 Pixabay clips (305 s) in `data/samples/`; phase-3-d EDA (Mac, 2026-10-27); per-source commercial flag (PR #11) |
-| Next up | phase-3-c (record the gap) → phase-3-e Label QA; re-run the EDA on the 5070 PC with roboflow_thai; re-download the 4 truncated COCO images |
+| Last done | phase-3-c: `make prepare` OK, **data gap recorded** (tuk_tuk 36, songthaew 27 train boxes; none in valid/test) |
+| Next up | phase-3-e Label QA → phase-3-f (own footage, would close the gap) → phase-3-g; re-run the EDA on the 5070 PC with roboflow_thai |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
 
@@ -317,3 +317,12 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a (`dvc add` is phase-3-g)
 - Decisions: none
 - Notes for next session: Pixabay's Terms of Service prohibit data mining for machine learning purposes and bulk copying, so the clips are **bench / demo only**: never train, label or publish with them (chosen by the user on 2026-10-28, who accepts the risk). Pixabay's CDN refuses scripted downloads, so the clips were fetched by hand. 4 of the 9 clips have a slowly moving camera, so a count accuracy check against manual counts (phase-8) still needs fixed-camera footage, ideally the user's own. Only ~1 clip shows a tuk-tuk (30949). Next: phase-3-c is not ticked until tuk_tuk / songthaew have >= 200 train boxes or the gap is recorded
+
+### 2026-10-29 — phase-3-c prepare + group split (done, with a recorded data gap)
+- Status: done (the PLAN criterion allows a recorded gap)
+- Done: `make prepare` and `make prepare-commercial` on the 5070 PC with coco + mio_tcd + roboflow_thai; no unreadable-image warnings (COCO was re-downloaded here, so the 4 truncated files from the Mac are not present)
+- Verify: both runs succeed; files on disk equal the annotation counts in every split. `coco` split: train 6,568 / valid 821 / test 821 images; train boxes car 15,537, pickup 2,519, van 619, bus 1,106, truck 1,907, motorcycle 2,054, bicycle 923, **tuk_tuk 36, songthaew 27**. `coco_commercial` (commercial_ok sources only, learning weights excluded): train 2,568 / valid 321 / test 321; train boxes car 7,062, pickup 231, van 159, bus 716, truck 1,298, motorcycle 1,963, bicycle 906, tuk_tuk 36, songthaew 27
+- **GAP (classes with < 200 train boxes):** tuk_tuk 36 and songthaew 27, all from `roboflow_thai` (about 12 and 9 distinct objects x 3 augmented copies, one clip, train-only). valid/test have **0** of both, so their per-class metrics cannot be measured. In the commercial split also van 159, and pickup / van have 0 in valid/test (MIO-TCD is the only source of them and is non-commercial). Do not train a model meant to count tuk-tuks or songthaews on this data
+- MLflow run / DVC rev: n/a (`dvc add` is phase-3-g)
+- Decisions: none
+- Notes for next session: closing the gap needs new data: own footage (phase-3-f, PDPA review first) or another Thai source with a verified license; at least ~200 train boxes per rare class and a few dozen in valid/test, grouped by camera/clip. phase-3-e should also check same-frame duplicates across splits

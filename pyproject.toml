@@ -10,7 +10,7 @@ dependencies = [
     "trackers>=2.6",           # ByteTrack / BoT-SORT / OC-SORT
     "onnx>=1.23",
     "onnxruntime>=1.31; sys_platform == 'darwin'",
-    "onnxruntime-gpu>=1.31; sys_platform == 'linux'",
+    "onnxruntime-gpu>=1.31; sys_platform == 'linux' or sys_platform == 'win32'",
     "opencv-python-headless>=4.10",
     "mlflow>=3.17",
     "pyyaml>=6.0",
@@ -63,7 +63,7 @@ build-backend = "hatchling.build"
 packages = ["src/vehicle_detect"]
 
 # ---------------------------------------------------------------------------
-# uv: PyTorch CUDA 13 wheels on Linux (RTX 5070 via WSL2/Ubuntu, GPU servers),
+# uv: PyTorch CUDA 13 wheels on Windows (RTX 5070 PC, D-019) and Linux (GPU servers, WSL2),
 # default PyPI wheels on macOS (Apple Silicon uses MPS).
 # cu130 covers Turing -> Blackwell (RTX 50xx = sm_120). PyTorch 2.14 dropped cu128/cu129.
 # Needs NVIDIA driver >= 580 (check: nvidia-smi). See DECISIONS.md D-013.
@@ -75,13 +75,13 @@ url = "https://download.pytorch.org/whl/cu130"
 explicit = true
 
 [tool.uv.sources]
-torch = [{ index = "pytorch-cu130", marker = "sys_platform == 'linux'" }]
-torchvision = [{ index = "pytorch-cu130", marker = "sys_platform == 'linux'" }]
+torch = [{ index = "pytorch-cu130", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }]
+torchvision = [{ index = "pytorch-cu130", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }]
 
 [tool.uv]
 default-groups = ["dev"]
-# Only resolve for the platforms we use (Mac laptop + Linux GPU/Jetson-class boxes)
-environments = ["sys_platform == 'darwin'", "sys_platform == 'linux'"]
+# Only resolve for the platforms we use (Mac laptop, Windows RTX 5070 PC, Linux GPU/Jetson-class boxes)
+environments = ["sys_platform == 'darwin'", "sys_platform == 'linux'", "sys_platform == 'win32'"]
 # evidently 0.7 pins plotly<6, fiftyone 1.22 needs plotly>=6 -> keep them in separate envs.
 # Monitoring runs in the serving/monitoring service, FiftyOne on the dev machine.
 conflicts = [[{ extra = "monitor" }, { group = "data" }]]

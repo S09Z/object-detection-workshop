@@ -10,12 +10,12 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-20 · by: Claude (phase-3-b, partial: visaitech + coco)
+> Last updated: 2026-10-20 · by: Claude (phase-3-b, partial: visaitech + coco + mio_tcd)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (phase-1-f waits for the RTX 5070 PC) |
-| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed` and `coco` done; MIO-TCD/UA-DETRAC, Roboflow Thai, clips pending) |
+| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed`, `coco`, `mio_tcd` done; Roboflow Thai, clips pending) |
 | Status | `in progress` <!-- not started / in progress / blocked / done --> |
 | Last done | phase-3-a: `docs/licenses.md` (datasets, models, libraries) |
 | Next up | phase-3-b → phase-3-c; phase-1-f when on the 5070 PC |
@@ -244,3 +244,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: phase-3-c is still unchecked (4 classes have no boxes)
+
+### 2026-10-20 — phase-3-b MIO-TCD subset (partial)
+- Status: partial (box not ticked)
+- Done: read the MIO-TCD page (CC BY-NC-SA 4.0, citation required, localization tar = 3.74 GB); new download hub `http_tar` (curl with resume + safe tar extract) and `mio_tcd` converter in `data/convert.py` (half the subset favours pickup_truck / work_van, drops degenerate boxes); source `mio_tcd` (`enabled: false`, run with `--only`); licenses.md row updated; converter test
+- Verify: `data/raw/mio_tcd` has 5,000 images / 16,941 boxes + SOURCE.json; `pytest -m "not gpu"` 28 passed. After `make prepare` (coco + mio_tcd): train 6,400 / valid 800 / test 800 images; train boxes car 13,994, pickup 2,300, van 463, bus 1,126, truck 1,857, motorcycle 1,201, bicycle 936, **tuk_tuk 0, songthaew 0**. Pickup and van now pass the ≥ 200 train-box bar; tuk_tuk and songthaew do not (Roboflow Thai / own footage)
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: `prepare` now mixes a non-commercial source (MIO-TCD) with CC BY ones in one split, so these weights are learning-only (D-010); a commercial split needs a per-source flag in `thai_traffic.yaml` (not implemented). `data/_downloads/mio_tcd` is a 7.0 GB cache (tar + extracted) and can be deleted. MIO-TCD has no camera ids, so same-camera frames can land in different splits; motorcycle/bicycle counts from it are small (63 / 102 boxes)

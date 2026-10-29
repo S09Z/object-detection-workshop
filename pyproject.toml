@@ -5,7 +5,7 @@ description = "Real-time vehicle detection & classification (>=60 FPS end-to-end
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-    "rfdetr>=1.11",            # Apache-2.0 detector (Nano/Small/Medium) — default for commercial use
+    "rfdetr[train,loggers]>=1.11",  # Apache-2.0 detector (Nano/Small/Medium) — default for commercial use
     "supervision>=0.31",       # datasets, metrics (mAP), LineZone counting, annotators
     "trackers>=2.6",           # ByteTrack / BoT-SORT / OC-SORT
     "onnx>=1.23",

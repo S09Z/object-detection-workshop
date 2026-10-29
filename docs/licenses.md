@@ -27,7 +27,7 @@ Cityscapes, Waymo (models trained on it are also restricted), DAWN, BDD100K (mem
 |---|---|---|---|---|
 | RF-DETR Nano / Small / Medium (`rfdetr`) | Apache-2.0 | Yes | Detector (D-001) | Larger RF-DETR sizes may carry a different license; check before using them |
 | Ultralytics YOLO (incl. fine-tuned weights) | AGPL-3.0 | Only under AGPL or an Enterprise license | Optional baseline (`yolo` extra) | Do not ship in the commercial product without a license |
-| Pretrained COCO weights for RF-DETR | Follows the RF-DETR release | Check on download | phase-4-a baseline | Verify at download time |
+| Pretrained COCO weights for RF-DETR (`rf-detr-small.pth`) | Follows the RF-DETR release (Apache-2.0 code; the weights' own license is not stated separately on the download page) | Yes, on the same terms as the code; confirm before shipping | phase-4-a baseline; fine-tune init for the Windows smoke run | Downloaded 2026-10-29 by the user's approval from `storage.googleapis.com/rfdetr/small_coco/checkpoint_best_regular.pth` (~386 MB) via `rfdetr` itself, cached in `~/.roboflow/models/`; a copy in the repo root is git-ignored (`*.pth`) |
 | supervision, trackers (ByteTrack) | MIT / Apache-2.0 (verify in `uv.lock` metadata) | Yes | Metrics, tracking, line counting | |
 | ONNX Runtime, TensorRT | MIT; NVIDIA license | Yes (TensorRT under NVIDIA terms) | Inference | Build engines on the target device |
 

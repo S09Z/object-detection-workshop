@@ -26,6 +26,7 @@ from PIL import Image
 
 from vehicle_detect.config import load_config
 from vehicle_detect.data.mapping import class_histogram, remap_coco
+from vehicle_detect.data.qa import drop_leaks
 from vehicle_detect.data.split import group_split
 
 
@@ -116,6 +117,10 @@ def main() -> None:
     split_cfg = cfg["split"]
     ratios = {k: split_cfg[k] for k in ("train", "valid", "test")}
     splits = group_split(merge(remapped), ratios, split_cfg["group_by"], split_cfg["seed"])
+    splits, removed = drop_leaks(splits)  # a duplicate of a train image must not sit in valid/test
+    if removed["valid"] or removed["test"]:
+        print(f"[dedup] dropped duplicates of train images: valid {removed['valid']}")
+        print(f"[dedup] dropped duplicates of earlier splits: test {removed['test']}")
 
     shutil.rmtree(out, ignore_errors=True)  # no stale files from earlier runs
     stats = {}

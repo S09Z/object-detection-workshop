@@ -10,17 +10,17 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-22 · by: Claude (phase-3-b, partial: + roboflow_thai)
+> Last updated: 2026-10-27 · by: Claude (phase-3-d EDA on the Mac)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (now on the RTX 5070 PC, WSL2) |
-| Current sub-task | **phase-3-b**: download and convert to COCO (`visaitech_mixed`, `coco`, `mio_tcd`, `roboflow_thai` done; clips pending) |
+| Current sub-task | **phase-3-b** (phase-3-d EDA done on Mac data; re-run on the 5070 PC with roboflow_thai): download and convert to COCO (`visaitech_mixed`, `coco`, `mio_tcd`, `roboflow_thai` done; clips pending) |
 | Status | `in progress` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-b partial: `roboflow_thai` downloaded (REST, no SDK); data re-created on the 5070 PC |
-| Next up | phase-3-b clips (`data/samples/`, >= 5 min) → phase-3-c (tuk_tuk / songthaew are a gap) |
+| Last done | phase-3-d EDA (2026-10-27); per-source commercial flag (PR #11) |
+| Next up | phase-3-e Label QA; re-download the 4 truncated COCO images; phase-3-b clips (`data/samples/`, >= 5 min) → phase-3-c (tuk_tuk / songthaew are a gap, valid/test have none); paused: per-source commercial flag in `prepare` |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
-| Blockers | none |
+| Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
 
 ### Health check (latest `./init.sh`)
 
@@ -30,6 +30,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 | `./init.sh` (WSL2) | ✅ OK | 2026-10-21 |
 | `uv sync --all-groups` | ✅ pass (Mac, Python 3.13 venv) | 2026-10-20 |
 | `make gpu-check` (RTX 5070) | ✅ OK, sm_120, bf16 True | 2026-10-21 |
+| ruff + pytest `-m "not gpu"` (Mac, development @ f8cffa1) | ✅ clean, 30 passed | 2026-10-26 |
 
 ### Key metrics (best so far)
 
@@ -276,3 +277,28 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: valid/test now have no tuk_tuk or songthaew, so per-class metrics for them cannot be measured until more data (own footage or other sources) exists; the counts are still ~12 / ~9 distinct objects x 3 augmented copies, so 36 / 27 overstates diversity. `vd-download` does not read `.env`: `set -a; . ./.env; set +a` first
+
+### 2026-10-26 — sync PROGRESS with work done in the other (5070 PC) session
+- Status: done (bookkeeping only, not a PLAN.md sub-task)
+- Done: `git pull` brought development to f8cffa1 (phase-1-f, Roboflow Thai download, clip-group fix); updated §1 only. PLAN.md already has 1-f ticked and 3-b/3-c unticked, which matches the log; no code changed
+- Verify: `ruff check`, `ruff format --check` clean; `pytest -m "not gpu"` 30 passed on the Mac
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: HANDOFF.md still says phase-1-f is pending and lists the older data counts; it is stale. PR state: #1-#6 merged (#1-#3 were redundant), #7-#10 draft. Per-source commercial flag for `prepare` is still not started
+
+### 2026-10-26 — per-source commercial flag in `prepare` (small change, not a PLAN.md sub-task)
+- Status: done
+- Done: `vd-prepare --commercial-only` (`make prepare-commercial`) keeps only sources with `commercial_ok: true` in `sources.yaml` (single source of truth, path in `thai_traffic.yaml` `paths.sources`; a source missing there counts as non-commercial) and writes `data/processed/coco_commercial` + `reports/data_stats_commercial.json`. The default run is unchanged. No DVC stage change (the commercial split is an on-demand output)
+- Verify: tests/test_prepare.py (3 tests: flag parsing, every mapped source exists in sources.yaml, end-to-end split excludes the learning source and the default run still includes it); ruff clean; `pytest -m "not gpu"` 33 passed. Real run on the Mac (coco only, roboflow_thai not downloaded here): train 2,400 / valid 300 / test 300; pickup, van, tuk_tuk, songthaew = 0
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: a model trained on `coco_commercial` still needs the image terms of COCO reviewed (docs/licenses.md); pickup/van come only from MIO-TCD, so the commercial set has no pickup/van until another licensed source exists
+
+### 2026-10-27 — phase-3-d EDA
+- Status: done (run on the Mac: `data/processed/coco` there = coco + mio_tcd, 8,000 images / 27,214 boxes; no roboflow_thai, so tuk_tuk / songthaew are absent in this run)
+- Done: `notebooks/01_eda_dataset.ipynb` now covers integrity check, class balance per split and source, box sizes, density, luminance (day/night proxy), 120 random images with boxes in 4 contact sheets, and the rare classes. Outputs are stripped (no frames in git)
+- Verify: `uv run jupyter nbconvert --execute --to notebook --stdout notebooks/01_eda_dataset.ipynb > /dev/null` exit 0; I also looked at two of the contact sheets
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Observations: (1) car is 64% of train boxes, pickup 10.5%, truck 8.5%, bus 5.1%, motorcycle 5.5%, bicycle 4.3%, van 2.1%; tuk_tuk / songthaew 0 here. (2) 35% of all boxes are < 32x32; car is the worst (44% small), bus the best (6%). (3) COCO is consumer photography (close-ups, people, indoor) while MIO-TCD is fixed traffic cameras: a large domain gap to Thai CCTV, and only 2,430 of 8,000 images are COCO. (4) MIO-TCD gives all pickup (2,885 of 2,885) and van (591) but almost no motorcycle (63) or bicycle (102); COCO gives motorcycle/bicycle. So class and domain are confounded: the model can learn "source" instead of "class". (5) Only 3.5% of sampled images are dark (mean luminance < 70) and none are COCO-night-like; MIO-TCD has some night, rain and snow frames; Thai tropical rain/night glare is not represented. (6) 48 images have no box, boxes/image mean 3.4, p95 10, max 29, far below Bangkok intersection density. (7) Label oddities: COCO "truck" includes fire engines and vans; some MIO-TCD night frames have one huge box over a dark blob; COCO has many non-road scenes (people, kitchen, sheep). (8) **4 raw COCO images are truncated** (65,536 bytes each: 000000463211, 436685, 427401, 159465), likely from the interrupted first download; they are listed in train and test. (9) **`prepare` does not clear its output**: `data/processed/coco/train` has 6,861 files but 6,400 listed images, and some files exist in two splits (stale output of earlier runs). RF-DETR reads the annotation file so training is unaffected, but disk contents are misleading
+- Notes for next session: fix 8 and 9 as separate small changes (re-download those COCO images or filter unreadable ones in `prepare`; clear `out` at the start of `prepare`); both need a user decision since re-download is a new download. Re-run the notebook on the 5070 PC after `make prepare` so Thai classes appear. phase-3-e should also check the same-frame duplicates across splits

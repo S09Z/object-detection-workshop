@@ -1,5 +1,15 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup dvc-init gpu-check lint fmt test download prepare train train-5070 train-resume register export eval bench count serve mlflow repro notebook clean
+.PHONY: help setup dvc-init gpu-check lint fmt test download prepare prepare-commercial train train-5070 train-resume register export eval bench count serve mlflow repro notebook clean
+
+# Windows (RTX 5070 PC, D-019): recipes are POSIX shell, so run them in Git Bash.
+# 8.3 path because make cannot handle the space in "Program Files".
+ifeq ($(OS),Windows_NT)
+SHELL := C:/PROGRA~1/Git/usr/bin/bash.exe
+HOME ?= $(subst \,/,$(USERPROFILE))
+# the chocolatey make is 32-bit: plain "nvidia-smi" is looked up in SysWOW64 and not found
+NVIDIA_SMI ?= C:/Windows/Sysnative/nvidia-smi.exe
+endif
+NVIDIA_SMI ?= nvidia-smi
 
 TRAIN_CONFIG ?= configs/train/rfdetr_small.yaml
 DVC_REMOTE ?= $(HOME)/dvc-store
@@ -33,6 +43,9 @@ download: ## HF / Kaggle / Roboflow -> data/raw/<source> (configs/data/sources.y
 prepare: ## Raw datasets -> data/processed/coco
 	uv run vd-prepare
 
+prepare-commercial: ## commercial_ok sources only -> data/processed/coco_commercial
+	uv run vd-prepare --commercial-only
+
 dvc-init: ## DVC + local/NAS remote (D-015). Override: make dvc-init DVC_REMOTE=/mnt/nas/dvc-store
 	@test -d .dvc || uv run dvc init -q
 	mkdir -p $(DVC_REMOTE)
@@ -40,7 +53,7 @@ dvc-init: ## DVC + local/NAS remote (D-015). Override: make dvc-init DVC_REMOTE=
 	uv run dvc remote list
 
 gpu-check: ## Verify CUDA/torch can run kernels on this GPU (RTX 5070 = sm_120)
-	nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv
+	$(NVIDIA_SMI) --query-gpu=name,driver_version,memory.total --format=csv
 	uv run vd-gpu-check
 
 train: ## Fine-tune RF-DETR (logs to MLflow). Override: make train TRAIN_CONFIG=...

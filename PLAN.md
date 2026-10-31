@@ -79,7 +79,7 @@
   - Goal: บันทึก license ทุก dataset/model ก่อนดาวน์โหลด
   - Output: `docs/licenses.md` ตาราง: name, license, commercial OK?, ใช้ใน phase ไหน
   - Verify: ทุก source ใน `source_mappings` มีแถวใน `docs/licenses.md`
-- [ ] **phase-3-b** ดาวน์โหลดและแปลงเป็น COCO (`make download`, D-018)
+- [x] **phase-3-b** ดาวน์โหลดและแปลงเป็น COCO (`make download`, D-018)
   - Goal: เปิดใช้ source ใน `configs/data/sources.yaml` โดย HF `visaitech_mixed` เปิดไว้แล้ว ส่วน Kaggle และ Roboflow ต้องใส่ slug เอง
     และ pin `revision` COCO vehicle subset + MIO-TCD หรือ UA-DETRAC (ใช้เรียน) + Roboflow Thai (CC BY 4.0) ลง `data/raw/<source>/`
     และคลิปจราจรที่ license อนุญาต (Pexels / Pixabay / CC BY) ≥ 5 นาทีลง `data/samples/` สำหรับใช้ bench และ count (D-016)
@@ -90,7 +90,7 @@
   - Goal: `make prepare` สร้าง train/valid/test แบบแยกตามกล้อง
   - Output: `data/processed/coco/`, `reports/data_stats.json`
   - Verify: `make prepare` สำเร็จ, ทุก class มี box ใน train ≥ 200 (ถ้าไม่ถึงให้บันทึกไว้เป็น gap)
-- [ ] **phase-3-d** EDA (`notebooks/01_eda_dataset.ipynb`)
+- [x] **phase-3-d** EDA (`notebooks/01_eda_dataset.ipynb`)
   - Goal: ดูรูปจริง ≥ 100 รูป, class balance, ขนาด box, กลางวัน/กลางคืน
   - Output: สรุป 5–10 ข้อสังเกตใน `PROGRESS.md` (เช่น "มอเตอร์ไซค์ 40% เป็น box < 32×32")
   - Verify: notebook รันจบโดยไม่ error (`uv run jupyter nbconvert --execute --to notebook --stdout notebooks/01_eda_dataset.ipynb > /dev/null`)

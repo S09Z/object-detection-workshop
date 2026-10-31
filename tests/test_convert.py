@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import pytest
 
-from vehicle_detect.data.convert import hf_metadata_to_coco, yolo_to_coco
+from vehicle_detect.data.convert import coco_passthrough, hf_metadata_to_coco, yolo_to_coco
 
 
 def _img(path, w=200, h=100):
@@ -65,3 +65,20 @@ def test_mio_tcd_subset_favours_preferred_classes(tmp_path):
     assert len(vans) == 4  # all 4 van images fit in the preferred half of the budget
     assert coco["annotations"][0]["bbox"] == [10.0, 5.0, 20.0, 20.0]  # x1y1x2y2 -> xywh
     assert all(a["bbox"][2] > 0 for a in coco["annotations"])
+
+
+def test_coco_passthrough_sets_camera_id_from_file_name(tmp_path):
+    root, out = tmp_path / "raw", tmp_path / "out"
+    root.mkdir()
+    for name in ("clip-1_mp4-0001_jpg.rf.aaa.jpg", "clip-1_mp4-0001_jpg.rf.bbb.jpg"):
+        (root / name).write_bytes(b"x")
+    ann = {
+        "images": [
+            {"id": i, "file_name": n} for i, n in enumerate(sorted(p.name for p in root.iterdir()))
+        ],
+        "annotations": [],
+        "categories": [],
+    }
+    (root / "a.json").write_text(json.dumps(ann))
+    coco = coco_passthrough(root, out, "a.json", ".", r"^(.+_mp4)-\d+_jpg")
+    assert {i["camera_id"] for i in coco["images"]} == {"clip-1_mp4"}

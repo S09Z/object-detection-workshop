@@ -30,12 +30,16 @@ source_mappings:
     bicycle: bicycle
     non-motorized_vehicle: null
     pedestrian: null
-  roboflow_thai:     # CC BY 4.0
+  roboflow_thai:     # CC BY 4.0 (thai-traffic-aud0j); names are case-sensitive, as on Universe
     Car: car
-    Pickup: pickup
-    Taxi: car
-    Motorcycle: motorcycle
-    Songthaew: songthaew
+    truck: truck
+    bus: bus
+    motorcycle: motorcycle
+    van: van
+    taxi: car        # decided 2026-10-22: taxi is a car
+    pickup truck: pickup
+    songtaew: songthaew
+    Tuktuk: tuk_tuk
 
 paths:
   raw: data/raw

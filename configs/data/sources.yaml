@@ -72,16 +72,19 @@ sources:
   - name: roboflow_thai
     enabled: false
     hub: roboflow
-    workspace: CHANGE_ME      # from the Roboflow Universe URL
-    project: CHANGE_ME
+    workspace: classification-chickhen   # universe.roboflow.com/classification-chickhen/thai-traffic-aud0j
+    project: thai-traffic-aud0j
     version: 1
     format: coco
     subdir: train             # Roboflow COCO export: train/_annotations.coco.json
     annotations: _annotations.coco.json
     images: .
+    # 3 Roboflow augmentations per frame, all frames from one clip: group by clip so copies never
+    # straddle splits (name: <clip>_mp4-0022_jpg.rf.<hash>.jpg)
+    camera_id_regex: "^(.+_mp4)-\\d+_jpg"
     license: CC-BY-4.0
     commercial_ok: true
-    notes: Thai classes (Songthaew, Taxi, Pickup, Motorcycle). Tiny (~59 images).
+    notes: Thai classes incl. songtaew and Tuktuk. Tiny (93 images, version 1).
 
   - name: kaggle_example
     enabled: false

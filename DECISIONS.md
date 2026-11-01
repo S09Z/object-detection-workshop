@@ -48,12 +48,13 @@ session doesn't reverse it without a reason or repeat a discussion that has alre
 | D-010 | Public datasets for learning; production uses COCO/CC BY + in-house Thai data | Accepted |
 | D-011 | Privacy by design: send only counts/boxes out of the device | Accepted |
 | D-012 | Harness: PLAN.md (Verify) + PROGRESS.md + DECISIONS.md instead of a JSON feature list | Accepted |
-| D-013 | Train on RTX 5070 12 GB with PyTorch cu130, via WSL2 | Accepted |
+| D-013 | Train on RTX 5070 12 GB with PyTorch cu130, via WSL2 | Superseded by D-019 |
 | D-014 | Target device = RTX 5070 PC (edge server) | Accepted |
 | D-015 | DVC remote = local disk / NAS (on-premise) | Accepted |
 | D-016 | No Thai footage yet: use public data + freely licensed clips first | Accepted |
 | D-017 | Checkpoint & run lineage: best by val mAP, resume, seed, test, MLflow artifacts + registry | Accepted |
 | D-018 | Pull datasets from HF / Kaggle / Roboflow with `vd-download`, separate from training inclusion | Accepted |
+| D-019 | Train and bench on native Windows instead of WSL2 | Accepted |
 
 ---
 
@@ -157,7 +158,7 @@ session doesn't reverse it without a reason or repeat a discussion that has alre
 - Revisit if: agents keep editing goals/Verify criteria or ticking tasks without running Verify → move to `tasks.json`
 
 ## D-013 — Train on RTX 5070 12 GB with PyTorch cu130, via WSL2
-- Date: 2026-10-20 · Phase: phase-1-f · Status: Accepted
+- Date: 2026-10-20 · Phase: phase-1-f · Status: Superseded by D-019
 - Decided by: user (RTX 5070) + agent (how to set it up)
 - Context: the RTX 5070 is Blackwell (sm_120). PyTorch 2.14 dropped the cu128/cu129 wheels; CUDA 13.x builds cover Turing → Blackwell
 - Options: A) native Windows B) WSL2 + Ubuntu 24.04 C) dual-boot Linux
@@ -221,3 +222,13 @@ session doesn't reverse it without a reason or repeat a discussion that has alre
 - Consequences: the license an uploader tags on a mirror (e.g. ua_detrac on HF tagged CC BY 4.0) doesn't override the original license → mirrors whose original license is unverified are `commercial_ok: false`.
   Pin `revision` once you've chosen a dataset
 - Revisit if: you need streaming of very large datasets → use the `datasets` library instead of `snapshot_download`
+
+## D-019 — Train and bench on native Windows instead of WSL2
+- Date: 2026-10-29 · Phase: setup (between phase-3-e and phase-3-g) · Status: Accepted
+- Decided by: user ("move training to Windows, stop using WSL"); the agent only did the setup
+- Context: D-013 chose WSL2 so that `make`, `init.sh`, DVC and TensorRT behave as on Linux. The user now wants the RTX 5070 PC used as plain Windows
+- Options: A) keep WSL2 (D-013) B) native Windows, shell recipes run in Git Bash C) dual-boot Linux
+- Decision: B. `pyproject.toml`: `win32` added to `tool.uv.environments`; torch / torchvision come from the `cu130` index on `win32` too; `onnxruntime-gpu` on `win32`. `Makefile` sets `SHELL` to Git Bash on Windows. `.gitattributes`: `* text=auto eol=lf` so shell scripts keep LF. D-013 is superseded. D-014 (the RTX 5070 PC is the target device and the 60 FPS gate runs on it) is unchanged, but its "build the TensorRT engine in WSL2" now means "on this machine, in Windows"
+- Why: the user's choice; one OS to maintain on the machine. The Windows cu130 torch wheel exists on the PyTorch index (`torch 2.14.1+cu130` cp313 win_amd64)
+- Consequences / risks, not yet verified on this machine: TensorRT and `onnxruntime-gpu` with CUDA 13 on Windows (phase-6); DataLoader workers use spawn on Windows, which is slower to start and needs `num_workers` tuning; the 12 GB VRAM settings of D-013 still apply and Windows keeps some VRAM for the desktop (watch peak VRAM); `uv.lock` now resolves 3 platforms and every contributor on Mac/Linux re-syncs once. The WSL clone is kept untouched as a fallback and is not deleted. `CLAUDE.md` and `docs/` still say WSL2 in places and are updated separately
+- Revisit if: the Windows run cannot hit the p99 gate, TensorRT does not work, or training is unstable (return to A)

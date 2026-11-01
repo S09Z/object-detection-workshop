@@ -15,7 +15,7 @@ read by a person; entries below come from the project config and need that check
 | `visaitech_mixed` | Hugging Face `visaitech/vehicle-mixed-traffic-detection` @ `de35185` (v0.1, Visaitech 2026; recorded by Visaitech, i.e. the HF repo is the original, not a mirror) | CC BY 4.0: commercial use allowed with attribution to Visaitech | same (no separate mirror) | Yes, with attribution | **Yes**, dataset card read 2026-10-20 | phase-3-b (downloaded; not in `source_mappings`) | 293 images / 1,506 boxes, 4 coarse classes (pedestrian, 2-wheeler, 3-wheeler, 4-wheeler), daylight dashcam from 6 videos. Plates, heads pixelated. Excluded the 12 GB unannotated `videos/` folder (not needed). Attribution and the card's BibTeX must go in the dataset card (phase-9-b) |
 | `ua_detrac_hf_mirror` | HF `abhineet123/ua_detrac` | UA-DETRAC terms unverified | mirror tag CC-BY-4.0 | **No** until the original license is confirmed | No | disabled | Learning and benchmarking only |
 | `kaggle_example` | placeholder | CHECK_ON_KAGGLE | n/a | **No** | n/a | disabled | Fill in the real slug and license before enabling |
-| Freely licensed traffic clips (Pexels / Pixabay / CC BY) | `data/samples/` | per clip | n/a | Per clip | No | phase-3-b, 4-e, 6 | Record URL and license per clip in `data/samples/SOURCES.md` when added |
+| Pixabay traffic clips (9 clips, 305 s, Bangkok) | `data/samples/`, listed in `data/samples/SOURCES.md` | Pixabay Content License: free use, no attribution, no standalone redistribution | n/a | **Bench / demo only.** ToS prohibit data mining for machine learning purposes and bulk copying; do not train, label or publish with them | **Yes**, license summary and ToS read 2026-10-28 | phase-3-b, 4-e, 6 | Hand-downloaded. Not CC BY. Other Pexels / CC BY clips may still be added later |
 | Own Thai footage | cameras / partner | owned or contract | n/a | Yes, if rights and PDPA are cleared | n/a | phase-3-f | Needs `docs/privacy.md` review first |
 
 Known non-commercial or restricted datasets that must not enter a commercial model: MIO-TCD, KITTI,
@@ -27,7 +27,7 @@ Cityscapes, Waymo (models trained on it are also restricted), DAWN, BDD100K (mem
 |---|---|---|---|---|
 | RF-DETR Nano / Small / Medium (`rfdetr`) | Apache-2.0 | Yes | Detector (D-001) | Larger RF-DETR sizes may carry a different license; check before using them |
 | Ultralytics YOLO (incl. fine-tuned weights) | AGPL-3.0 | Only under AGPL or an Enterprise license | Optional baseline (`yolo` extra) | Do not ship in the commercial product without a license |
-| Pretrained COCO weights for RF-DETR | Follows the RF-DETR release | Check on download | phase-4-a baseline | Verify at download time |
+| Pretrained COCO weights for RF-DETR (`rf-detr-small.pth`) | Follows the RF-DETR release (Apache-2.0 code; the weights' own license is not stated separately on the download page) | Yes, on the same terms as the code; confirm before shipping | phase-4-a baseline; fine-tune init for the Windows smoke run | Downloaded 2026-10-29 by the user's approval from `storage.googleapis.com/rfdetr/small_coco/checkpoint_best_regular.pth` (~386 MB) via `rfdetr` itself, cached in `~/.roboflow/models/`; a copy in the repo root is git-ignored (`*.pth`) |
 | supervision, trackers (ByteTrack) | MIT / Apache-2.0 (verify in `uv.lock` metadata) | Yes | Metrics, tracking, line counting | |
 | ONNX Runtime, TensorRT | MIT; NVIDIA license | Yes (TensorRT under NVIDIA terms) | Inference | Build engines on the target device |
 

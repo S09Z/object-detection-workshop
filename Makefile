@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup dvc-init gpu-check lint fmt test download prepare train train-5070 train-resume register export eval bench count serve mlflow repro notebook clean
+.PHONY: help setup dvc-init gpu-check lint fmt test download prepare prepare-commercial train train-5070 train-resume register export eval bench count serve mlflow repro notebook clean
 
 TRAIN_CONFIG ?= configs/train/rfdetr_small.yaml
 DVC_REMOTE ?= $(HOME)/dvc-store
@@ -32,6 +32,9 @@ download: ## HF / Kaggle / Roboflow -> data/raw/<source> (configs/data/sources.y
 
 prepare: ## Raw datasets -> data/processed/coco
 	uv run vd-prepare
+
+prepare-commercial: ## commercial_ok sources only -> data/processed/coco_commercial
+	uv run vd-prepare --commercial-only
 
 dvc-init: ## DVC + local/NAS remote (D-015). Override: make dvc-init DVC_REMOTE=/mnt/nas/dvc-store
 	@test -d .dvc || uv run dvc init -q

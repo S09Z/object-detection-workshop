@@ -90,7 +90,7 @@
   - Goal: `make prepare` สร้าง train/valid/test แบบแยกตามกล้อง
   - Output: `data/processed/coco/`, `reports/data_stats.json`
   - Verify: `make prepare` สำเร็จ, ทุก class มี box ใน train ≥ 200 (ถ้าไม่ถึงให้บันทึกไว้เป็น gap)
-- [ ] **phase-3-d** EDA (`notebooks/01_eda_dataset.ipynb`)
+- [x] **phase-3-d** EDA (`notebooks/01_eda_dataset.ipynb`)
   - Goal: ดูรูปจริง ≥ 100 รูป, class balance, ขนาด box, กลางวัน/กลางคืน
   - Output: สรุป 5–10 ข้อสังเกตใน `PROGRESS.md` (เช่น "มอเตอร์ไซค์ 40% เป็น box < 32×32")
   - Verify: notebook รันจบโดยไม่ error (`uv run jupyter nbconvert --execute --to notebook --stdout notebooks/01_eda_dataset.ipynb > /dev/null`)

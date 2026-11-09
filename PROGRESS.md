@@ -360,3 +360,11 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: run `smoke-win-5070-1ep` (experiment vehicle-detect); `git_dirty=true` and no DVC data rev, so it does not count under D-017
 - Decisions: none
 - Notes for next session: before the real 50-epoch run, try `batch_size: 8` + `grad_accum_steps: 2` (same effective 16) and compare s/epoch and utilisation as one change; if utilisation stays low, look at dataloader workers / image decode
+
+### 2026-11-09 — why GPU utilisation was low: worker start-up on Windows (1-epoch probes)
+- Status: done (diagnosis; follows the 2026-10-29 peak-VRAM entry, which left the low utilisation undiagnosed)
+- Done: 1-epoch probes of `rfdetr_small_rtx5070.yaml` on a fixed 960-image subset of `data/processed/coco` (seed 0; 64 valid, `run_test: false`, hard-linked into git-ignored `runs/bench_data`), batch 4 x accum 4, changing only `num_workers`. A game was holding the GPU during the first probes; it was closed for the rows below and the result did not change
+- Verify: time of the train phase (log line "Building ... train dataset" to "Skipping validation"): `num_workers` 8 -> 293 / 313 / 319 s (3 runs), 4 -> 144 s, 2 -> 98 s, 0 -> 52 s. Peak GPU memory 5.9-6.1 GB in all cases. Batch 8 x accum 2 with 8 workers -> 274 s (not significant vs. 293-319 s). With 8 workers GPU util averages 6% and CPU 22%, so neither is the limit: the time is a start-up cost that grows with the worker count (about 25-35 s per worker, consistent with Windows `spawn` re-importing torch/rfdetr in each worker)
+- MLflow run / DVC rev: runs `bench-*` (experiment vehicle-detect); `git_dirty=true`, do not count under D-017
+- Decisions: none
+- Notes for next session: this measures start-up, not steady state. `persistent_workers` is on by default, so the cost is paid once per run, not per epoch (the 2-epoch run's 2nd epoch took ~215 s with 8 workers incl. val). The earlier "38% average GPU utilisation" came from a 1-epoch run that included this start-up, so it overstated the problem. Do not change `num_workers` in the config yet: first compare steady-state epoch time (3-epoch run, epochs 2-3) for `num_workers` 8 vs 2 vs 0, since 0 moves decoding into the main process and may be slower per epoch

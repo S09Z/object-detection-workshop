@@ -368,3 +368,11 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: runs `bench-*` (experiment vehicle-detect); `git_dirty=true`, do not count under D-017
 - Decisions: none
 - Notes for next session: this measures start-up, not steady state. `persistent_workers` is on by default, so the cost is paid once per run, not per epoch (the 2-epoch run's 2nd epoch took ~215 s with 8 workers incl. val). The earlier "38% average GPU utilisation" came from a 1-epoch run that included this start-up, so it overstated the problem. Do not change `num_workers` in the config yet: first compare steady-state epoch time (3-epoch run, epochs 2-3) for `num_workers` 8 vs 2 vs 0, since 0 moves decoding into the main process and may be slower per epoch
+
+### 2026-11-10 — steady-state epoch time vs num_workers (3-epoch probes, 960-image subset)
+- Status: done (measurement; follows the 2026-11-09 start-up entry)
+- Done: same subset and config as the 2026-11-09 probes, `epochs: 3`, only `num_workers` changed (8, 2, 0). Steady-state epoch time = gap between the "Best EMA metric improved" log lines of consecutive epochs (train + val of 64 images)
+- Verify: `num_workers` 8 -> first epoch done after 240 s, then 33 s per epoch; 2 -> first epoch after 85 s, then 31 s per epoch; 0 -> first epoch after ~41 s, then 40 s per epoch. Peak GPU memory 5.8-5.9 GB. Mean GPU util over the whole run 13.5% (8) / 29% (2) / 34% (0); mean CPU 23% / 36% / 46%. So the per-epoch speed is the same for 8 and 2 workers (about 30 images/s, matching the full-data 2-epoch run), and 0 workers is ~25% slower per epoch but has no start-up cost
+- MLflow run / DVC rev: runs `bench-ep3_*`; `git_dirty=true`, do not count under D-017
+- Decisions: none
+- Notes for next session: the ~2.5 min saved by 2 workers at start is ~1.5% of a 50-epoch run, so `num_workers: 8` in `rfdetr_small_rtx5070.yaml` was left unchanged; use `num_workers: 2` for short probes and smoke runs. One run per setting, subset only, so differences under ~10% are within noise. Low GPU utilisation is therefore not a data-loading problem; the 5070 is simply not saturated at batch 4 (peak 6 GB of 12): the next single change to try is `batch_size: 8` + `grad_accum_steps: 2` over a full epoch

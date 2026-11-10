@@ -376,3 +376,11 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: runs `bench-ep3_*`; `git_dirty=true`, do not count under D-017
 - Decisions: none
 - Notes for next session: the ~2.5 min saved by 2 workers at start is ~1.5% of a 50-epoch run, so `num_workers: 8` in `rfdetr_small_rtx5070.yaml` was left unchanged; use `num_workers: 2` for short probes and smoke runs. One run per setting, subset only, so differences under ~10% are within noise. Low GPU utilisation is therefore not a data-loading problem; the 5070 is simply not saturated at batch 4 (peak 6 GB of 12): the next single change to try is `batch_size: 8` + `grad_accum_steps: 2` over a full epoch
+
+### 2026-11-10 — batch 8 x accum 2 vs batch 4 x accum 4, one full epoch (6,568 images, 8 workers)
+- Status: done (measurement; single change vs. the config, as in the 2026-11-09/10 probes)
+- Done: `rfdetr_small_rtx5070.yaml` with `epochs: 1`, `run_test: false`, full `data/processed/coco`, only batch/accum changed; GPU idle beforehand (no game); both runs back to back
+- Verify: train phase (incl. ~4 min worker start-up with 8 workers) 414 s for batch 8 x 2 vs 435 s for batch 4 x 4 (-5%, within noise); whole command 509 s vs 484 s. Peak GPU memory **10,036 MiB vs 6,153 MiB** (of 12,227). Mean GPU util 25% vs 27%. Epoch-1 val EMA mAP50-95 0.532 vs 0.527, train loss 5.79 vs 5.73 (same effective batch 16, so no difference expected)
+- MLflow run / DVC rev: runs `bench-full_b8a2`, `bench-full_b4a4`; `git_dirty=true`, do not count under D-017
+- Decisions: none
+- Notes for next session: batch 8 gives no speed-up but leaves only ~2 GB free, so `rfdetr_small_rtx5070.yaml` stays at batch 4 x accum 4. Mean GPU util is 25-27% in both because the 4 min start-up is included; the GPU is not the limit of a 1-epoch run, and for the 50-epoch run the start-up is amortised. Next lever, if epoch time matters, is not batch size (try resolution / `amp` only with an MLflow-compared run)

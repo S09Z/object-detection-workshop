@@ -102,7 +102,7 @@
   - Goal: วางแผนแหล่ง footage (กล้องตัวเอง / ลูกค้า / หน่วยงาน) หลังผ่าน `phase-2-c` แล้ว extract เฟรม, pre-label ด้วย SAM 3 / X-AnyLabeling แล้วตรวจด้วยคนใน CVAT หรือ Label Studio
   - Output: `data/raw/thai_cctv/` อย่างน้อย 1,000 รูป ครอบคลุม songthaew / tuk_tuk / pickup
   - Verify: ทุก class มี ≥ 100 box ที่คนตรวจแล้ว, เพิ่ม source ใน `source_mappings`
-- [ ] **phase-3-g** Version data ด้วย DVC
+- [x] **phase-3-g** Version data ด้วย DVC
   - Goal: `dvc add data/raw` แล้ว push ไป remote
   - Verify: `uv run dvc status -c` แสดงว่า in sync และ `git log` มี commit ของ `data/raw.dvc`
 

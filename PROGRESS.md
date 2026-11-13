@@ -10,14 +10,14 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-29 · by: Claude (moved the RTX 5070 PC from WSL2 to native Windows, D-019)
+> Last updated: 2026-11-13 · by: Claude (phase-3-g: `data/raw` versioned with DVC)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
-| Current sub-task | **phase-3-f**: own Thai footage + pre-label (deferred, D-016) or phase-3-g: `dvc add` the data |
+| Current sub-task | **phase-4-a**: pretrained baseline (phase-3-f stays deferred, D-016) |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-e: duplicates across splits = 0 after dedup in `prepare`; camera-level leak recorded (`docs/label_issues.md`) |
+| Last done | phase-3-g: `data/raw` tracked by `data/raw.dvc` (8,511 files, 720,825,243 bytes) and pushed to the local remote `~/dvc-store` |
 | Next up | phase-3-g (`dvc add data/raw` + processed) → phase 4 (baseline, parity test, overfit one batch); phase-3-f when footage exists (it would close the tuk_tuk / songthaew gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
@@ -384,3 +384,11 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: runs `bench-full_b8a2`, `bench-full_b4a4`; `git_dirty=true`, do not count under D-017
 - Decisions: none
 - Notes for next session: batch 8 gives no speed-up but leaves only ~2 GB free, so `rfdetr_small_rtx5070.yaml` stays at batch 4 x accum 4. Mean GPU util is 25-27% in both because the 4 min start-up is included; the GPU is not the limit of a 1-epoch run, and for the 50-epoch run the start-up is amortised. Next lever, if epoch time matters, is not batch size (try resolution / `amp` only with an MLflow-compared run)
+
+### 2026-11-13 — phase-3-g: version data with DVC
+- Status: done
+- Done: `dvc add data/raw` -> `data/raw.dvc` (md5 `a3d359377f43a482856162129440d914.dir`, 8,511 files, 720,825,243 bytes); `dvc push` to the local remote `C:/Users/tommy/dvc-store` (8,481 unique objects, 707 MB). `.gitignore` changed from `/data/` to `/data/*` + `!/data/*.dvc` + `!/data/.gitignore`: DVC refuses a `.dvc` file that git ignores, and the contents of `data/` stay ignored. The remote is machine-local (`.dvc/config.local`, `make dvc-init` equivalent run by hand with the Windows path, `uv run --no-sync dvc remote add -d storage C:/Users/tommy/dvc-store --local`). `data/processed` and `data/samples` are not tracked (they are derived / bench-demo only)
+- Verify: `uv run dvc status -c data/raw.dvc` -> "Cache and remote 'storage' are in sync."; `dvc status data/raw.dvc` -> "Data and pipelines are up to date."; `git log -- data/raw.dvc` shows this commit. The first plain `dvc push` printed "Everything is up to date" while the remote was still empty (0 bytes); a second `dvc push -v` transferred 8,481 files, which is what the numbers above are from
+- MLflow run / DVC rev: n/a; DVC data rev for lineage (D-017) = `data/raw.dvc` at this commit
+- Decisions: none
+- Notes for next session: `uv sync --all-groups` then `uv run --no-sync ...` (plain `uv run` syncs only `dev` and may remove `dvc`); `orjson` had to be reinstalled (`--reinstall-package orjson`) after the earlier "Access is denied". The camera-level leak (MIO-TCD views shared between train and valid/test) is a `prepare` / split change, so it does not alter `data/raw` and can still be fixed after this; it would need a new sub-task, then a train whose lineage counts under D-017 (clean tree + `dvc_data_rev`)

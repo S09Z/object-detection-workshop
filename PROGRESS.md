@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-27 · by: Claude (phase-3-d EDA on the Mac)
+> Last updated: 2026-10-29 · by: Claude (phase-3-b done, merged with the Mac's phase-3-d EDA)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (now on the RTX 5070 PC, WSL2) |
-| Current sub-task | **phase-3-b** (phase-3-d EDA done on Mac data; re-run on the 5070 PC with roboflow_thai): download and convert to COCO (`visaitech_mixed`, `coco`, `mio_tcd`, `roboflow_thai` done; clips pending) |
-| Status | `in progress` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-d EDA (2026-10-27); per-source commercial flag (PR #11) |
-| Next up | phase-3-e Label QA; re-download the 4 truncated COCO images; phase-3-b clips (`data/samples/`, >= 5 min) → phase-3-c (tuk_tuk / songthaew are a gap, valid/test have none); paused: per-source commercial flag in `prepare` |
+| Current sub-task | **phase-3-c**: prepare + group split (tuk_tuk / songthaew gap; valid/test have none); phase-3-e Label QA follows |
+| Status | `not started` <!-- not started / in progress / blocked / done --> |
+| Last done | phase-3-b: 4 datasets + 9 Pixabay clips (305 s) in `data/samples/`; phase-3-d EDA (Mac, 2026-10-27); per-source commercial flag (PR #11) |
+| Next up | phase-3-c (record the gap) → phase-3-e Label QA; re-run the EDA on the 5070 PC with roboflow_thai; re-download the 4 truncated COCO images |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
 
@@ -302,3 +302,18 @@ Template (copy it for each entry):
 - Decisions: none
 - Observations: (1) car is 64% of train boxes, pickup 10.5%, truck 8.5%, bus 5.1%, motorcycle 5.5%, bicycle 4.3%, van 2.1%; tuk_tuk / songthaew 0 here. (2) 35% of all boxes are < 32x32; car is the worst (44% small), bus the best (6%). (3) COCO is consumer photography (close-ups, people, indoor) while MIO-TCD is fixed traffic cameras: a large domain gap to Thai CCTV, and only 2,430 of 8,000 images are COCO. (4) MIO-TCD gives all pickup (2,885 of 2,885) and van (591) but almost no motorcycle (63) or bicycle (102); COCO gives motorcycle/bicycle. So class and domain are confounded: the model can learn "source" instead of "class". (5) Only 3.5% of sampled images are dark (mean luminance < 70) and none are COCO-night-like; MIO-TCD has some night, rain and snow frames; Thai tropical rain/night glare is not represented. (6) 48 images have no box, boxes/image mean 3.4, p95 10, max 29, far below Bangkok intersection density. (7) Label oddities: COCO "truck" includes fire engines and vans; some MIO-TCD night frames have one huge box over a dark blob; COCO has many non-road scenes (people, kitchen, sheep). (8) **4 raw COCO images are truncated** (65,536 bytes each: 000000463211, 436685, 427401, 159465), likely from the interrupted first download; they are listed in train and test. (9) **`prepare` does not clear its output**: `data/processed/coco/train` has 6,861 files but 6,400 listed images, and some files exist in two splits (stale output of earlier runs). RF-DETR reads the annotation file so training is unaffected, but disk contents are misleading
 - Notes for next session: fix 8 and 9 as separate small changes (re-download those COCO images or filter unreadable ones in `prepare`; clear `out` at the start of `prepare`); both need a user decision since re-download is a new download. Re-run the notebook on the 5070 PC after `make prepare` so Thai classes appear. phase-3-e should also check the same-frame duplicates across splits
+
+### 2026-10-27 — prepare: skip unreadable images, clear output dir (small fix)
+- Status: done (not a PLAN.md sub-task; follows observations 8 and 9 of the phase-3-d entry)
+- Done: `vd-prepare` now drops images that do not fully decode (with their boxes, one `[warn]` line each) and removes `data/processed/coco[_commercial]` before writing, so stale files from earlier runs cannot linger
+- Verify: `test_unreadable_image_is_skipped_and_stale_output_is_cleared` fails without the change and passes with it; ruff clean; `pytest -m "not gpu"` 34 passed. Real run on the Mac: the 4 truncated COCO images were skipped; train 6,397 / valid 800 / test 799 images, and file counts on disk equal the annotation counts (was 6,861 / 1,076 / 1,070)
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: the 4 corrupt raw files (65,536 bytes each) are still in `data/raw/coco/images`; re-downloading COCO would replace them (needs the user's OK). Also fixed by accident of the clean-up: no cross-split duplicate files remain
+### 2026-10-28 — phase-3-b done: traffic clips in data/samples
+- Status: done
+- Done: 9 hand-downloaded Pixabay clips (Bangkok, elevated 1080p) in `data/samples/`, 305.0 s = 5.08 min, with `data/samples/SOURCES.md` (URL, length, format per clip) and a row in `docs/licenses.md`; frames of every clip were reviewed, 5 clips rejected for close-up people, moving camera or night blur (30953, 31958, 31964, 31967, 30945; the last one is kept outside the repo in `~/rejected-clips/`)
+- Verify: `data/raw/{visaitech_mixed,coco,mio_tcd,roboflow_thai}/annotations.coco.json` have 293 / 3,000 / 5,000 / 210 images, each has `SOURCE.json`, each has a row in `docs/licenses.md` with original and mirror license; clips total 305.0 s (>= 300 s)
+- MLflow run / DVC rev: n/a (`dvc add` is phase-3-g)
+- Decisions: none
+- Notes for next session: Pixabay's Terms of Service prohibit data mining for machine learning purposes and bulk copying, so the clips are **bench / demo only**: never train, label or publish with them (chosen by the user on 2026-10-28, who accepts the risk). Pixabay's CDN refuses scripted downloads, so the clips were fetched by hand. 4 of the 9 clips have a slowly moving camera, so a count accuracy check against manual counts (phase-8) still needs fixed-camera footage, ideally the user's own. Only ~1 clip shows a tuk-tuk (30949). Next: phase-3-c is not ticked until tuk_tuk / songthaew have >= 200 train boxes or the gap is recorded

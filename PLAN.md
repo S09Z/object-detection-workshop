@@ -110,7 +110,7 @@
 
 > ให้ pipeline ทั้งเส้นรันได้ก่อน ยังไม่ต้องสนความแม่น
 
-- [ ] **phase-4-a** Pretrained baseline (ไม่ train)
+- [x] **phase-4-a** Pretrained baseline (ไม่ train)
   - Goal: RF-DETR pretrained COCO รันบน test set โดย map car/bus/truck/motorcycle/bicycle
   - Output: ค่า mAP baseline ใน `PROGRESS.md` (ตัวเลขที่ต้องเอาชนะ)
   - Verify: มีค่า mAP50-95 ต่อ class ที่ COCO รู้จัก

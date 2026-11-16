@@ -22,6 +22,8 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from PIL import Image
+
 from vehicle_detect.config import load_config
 from vehicle_detect.data.mapping import class_histogram, remap_coco
 from vehicle_detect.data.split import group_split
@@ -41,6 +43,29 @@ def merge(datasets: list[dict[str, Any]]) -> dict[str, Any]:
             annotations.append({**ann, "id": next_ann, "image_id": id_map[ann["image_id"]]})
             next_ann += 1
     return {"images": images, "annotations": annotations, "categories": datasets[0]["categories"]}
+
+
+def is_readable(path: str | Path) -> bool:
+    """True if the image decodes fully (a truncated download opens but fails on load)."""
+    try:
+        with Image.open(path) as im:
+            im.load()
+    except OSError:
+        return False
+    return True
+
+
+def drop_unreadable(ds: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    """Remove images that do not decode, and their annotations."""
+    bad = {img["id"] for img in ds["images"] if not is_readable(img["file_name"])}
+    if not bad:
+        return ds, []
+    names = [img["file_name"] for img in ds["images"] if img["id"] in bad]
+    return {
+        **ds,
+        "images": [i for i in ds["images"] if i["id"] not in bad],
+        "annotations": [a for a in ds["annotations"] if a["image_id"] not in bad],
+    }, names
 
 
 def commercial_sources(sources_cfg: dict[str, Any]) -> set[str]:
@@ -79,6 +104,9 @@ def main() -> None:
         for img in ds["images"]:
             img["file_name"] = str(raw / source / "images" / img["file_name"])
             img.setdefault("source", source)
+        ds, bad = drop_unreadable(ds)
+        for name in bad:
+            print(f"[warn] {source}: skipping unreadable image {name}")
         remapped.append(ds)
         print(f"[ok] {source}: {len(ds['images'])} images, {class_histogram(ds)}")
 
@@ -89,6 +117,7 @@ def main() -> None:
     ratios = {k: split_cfg[k] for k in ("train", "valid", "test")}
     splits = group_split(merge(remapped), ratios, split_cfg["group_by"], split_cfg["seed"])
 
+    shutil.rmtree(out, ignore_errors=True)  # no stale files from earlier runs
     stats = {}
     for name, ds in splits.items():
         split_dir = out / name

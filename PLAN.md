@@ -130,7 +130,7 @@
   - Goal: `make count` บนคลิปทางแยกได้วิดีโอที่มี box + เส้นนับ
   - Output: `reports/count_demo.mp4`, `reports/counts.json`
   - Verify: เปิดวิดีโอดูด้วยตา track ID ไม่กระโดดจนผิดปกติ และนับได้ > 0 ทั้งสองทิศ
-- [ ] **phase-4-f** Checkpoint, resume และ lineage (D-017)
+- [x] **phase-4-f** Checkpoint, resume และ lineage (D-017)
   - Goal: train สั้นๆ (5 epoch) แล้วหยุดกลางคัน (Ctrl-C หลัง epoch 2) จากนั้น `make train-resume TRAIN_CONFIG=...`
   - Output: MLflow run ที่มี tag `git_sha`, `dvc_data_rev`, `sha256` และ artifact `model/`
   - Verify: run ที่ resume ทำต่อจาก epoch เดิม (ไม่เริ่ม epoch 0), `checkpoint_best_total.pth` โหลดได้

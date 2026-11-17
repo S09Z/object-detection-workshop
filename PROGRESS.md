@@ -10,14 +10,14 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-11-17 · by: Claude (phase-4-d: smoke pipeline)
+> Last updated: 2026-11-17 · by: Claude (phase-4-f: checkpoint / resume / lineage drill)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
-| Current sub-task | **phase-4-e**: counting demo |
+| Current sub-task | **phase-4-e**: counting demo (needs a confident model: use `runs/lineage_5ep/checkpoint_best_total.pth`) |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-4-d: `make repro-smoke` runs subset -> train -> export -> evaluate -> bench to exit 0 on a 500-image subset (2 epochs) |
+| Last done | phase-4-f: 5-epoch run stopped after epoch 2 and resumed from epoch 2; lineage tags, `model/` artifact and archive pruning verified |
 | Next up | phase-3-g (`dvc add data/raw` + processed) → phase 4 (baseline, parity test, overfit one batch); phase-3-f when footage exists (it would close the tuk_tuk / songthaew gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
@@ -433,3 +433,11 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: run `smoke-pipeline` (experiment vehicle-detect), `git_dirty=true`, does not count under D-017
 - Decisions: none
 - Notes for next session: the smoke `subset` stage deliberately has no dependency on `data/processed/coco` (it is an output of the real `prepare` stage and would make dvc re-run it); after a new `make prepare` run it with `dvc repro -f`. First end-to-end timing on the RTX 5070 with CUDA EP fp32: 66.7 FPS / p99 20.1 ms including a tracker; the p99 misses the 16.7 ms budget, TensorRT fp16 (phase-6) is the lever. The TensorRT provider still cannot load on this machine (`nvinfer_10.dll`)
+
+### 2026-11-17 — phase-4-f: checkpoint, resume and lineage (D-017)
+- Status: done (executed before phase-4-e on purpose: the counting demo needs a model confident enough for ByteTrack, and this run produces one)
+- Done: `configs/train/lineage5.yaml` (RF-DETR Small, full `data/processed/coco`, 5 epochs, `checkpoint_interval: 1`, `keep_last_checkpoints: 2`, `num_workers: 2`, `run_test: true`). Prepared the lineage inputs first: `UV_NO_SYNC=1 uv run --no-sync dvc repro prepare` wrote `dvc.lock` (`data/processed/coco` md5 `575ffd68829193b16982658170d15a3e.dir`, 685 MB), committed; cleared 47 stat-dirty tracked files with `git add -u` (no content change) so `git_dirty` could read false. Run 1 was stopped after epoch 2 (process tree killed once `checkpoint_1.ckpt` was complete), then `make train-resume TRAIN_CONFIG=configs/train/lineage5.yaml`. Defect found and fixed (commit `f9b0ca6`): RF-DETR writes **no `last.ckpt` when `checkpoint_interval == 1`**, so `--resume auto` found nothing and would have restarted at epoch 0 without a warning; `checkpoints.resolve_resume("auto", ...)` now falls back to the newest `checkpoint_<n>.ckpt` (unit-tested)
+- Verify: (1) the resumed run printed `Resuming from runs\lineage_5ep\checkpoint_1.ckpt` and `metrics.csv` continues at epochs 2, 3, 4 (not 0): val EMA mAP50-95 0.500, 0.521 (run 1), 0.538, 0.541, 0.539 (resumed run); test mAP50-95 0.546, mAP50 0.733 (808 images, 7 classes). (2) `checkpoint_best_total.pth` loads (`vd-train` load-tests it after training; exit 0). (3) interval archives left: `checkpoint_3.ckpt`, `checkpoint_4.ckpt` = `keep_last_checkpoints` (0, 1, 2 were pruned); best / last_ema kept. (4) MLflow run `lineage-5ep-resume` (id `5ff03767...`, FINISHED): tags `git_sha=f9b0ca61802f...`, `git_dirty=false`, `dvc_data_rev=575ffd688291...`, `sha256=9313d1ca90f7...`, `resumed_from=runs\lineage_5ep\checkpoint_1.ckpt`; artifact `model/` holds `checkpoint_best_total.pth`, `model_meta.json`, `train_config.yaml`, `data_config.yaml`. `pytest -m "not slow and not gpu"` passes, ruff clean
+- MLflow run / DVC rev: `lineage-5ep-resume`, `git_sha=f9b0ca6`, `dvc_data_rev=575ffd68829193b16982658170d15a3e.dir`, `git_dirty=false`: this run **counts** under D-017. The interrupted first run `lineage-5ep` (98e46006) carries no tags (it never reached the lineage step) and is marked KILLED
+- Decisions: none
+- Notes for next session: speed on the RTX 5070 with 2 workers, batch 4 x 4: about 3.4 min per epoch including validation, 13.5 min for the 3 resumed epochs plus test. A tracked-file `git status` that is not empty (even CRLF-only) makes `git_dirty=true`: run `git add -u` first, and do not edit tracked files while a run is going. A run started from a different commit gets a different `git_sha`: the resumed run's `git_sha` is the commit of the resume, not of epoch 0-1. The model is a 5-epoch result, not the phase-5-a baseline

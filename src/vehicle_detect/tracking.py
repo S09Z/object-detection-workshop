@@ -38,6 +38,7 @@ def count_video(cfg: dict) -> dict:
     with sv.VideoSink(str(out_path), video_info) as sink:
         for frame in sv.get_video_frames_generator(cfg["video"]):
             detections = tracker.update(detector(frame))
+            detections = detections[detections.tracker_id >= 0]  # -1 = track not confirmed yet
             line.trigger(detections)
             tracker_ids = detections.tracker_id if detections.tracker_id is not None else []
             labels = [

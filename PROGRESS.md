@@ -10,14 +10,14 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-11-17 · by: Claude (phase-4-f: checkpoint / resume / lineage drill)
+> Last updated: 2026-11-17 · by: Claude (phase-4-e: counting demo)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
-| Current sub-task | **phase-4-e**: counting demo (needs a confident model: use `runs/lineage_5ep/checkpoint_best_total.pth`) |
+| Current sub-task | **phase-5-a**: fine-tune RF-DETR Small baseline (`make train-5070`, full data) |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-4-f: 5-epoch run stopped after epoch 2 and resumed from epoch 2; lineage tags, `model/` artifact and archive pruning verified |
+| Last done | phase-4-e: `make count` writes an annotated video and counts (in 11 / out 10) on clip 30949; tracks are stable (median life 179 frames) |
 | Next up | phase-3-g (`dvc add data/raw` + processed) → phase 4 (baseline, parity test, overfit one batch); phase-3-f when footage exists (it would close the tuk_tuk / songthaew gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
@@ -441,3 +441,11 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: `lineage-5ep-resume`, `git_sha=f9b0ca6`, `dvc_data_rev=575ffd68829193b16982658170d15a3e.dir`, `git_dirty=false`: this run **counts** under D-017. The interrupted first run `lineage-5ep` (98e46006) carries no tags (it never reached the lineage step) and is marked KILLED
 - Decisions: none
 - Notes for next session: speed on the RTX 5070 with 2 workers, batch 4 x 4: about 3.4 min per epoch including validation, 13.5 min for the 3 resumed epochs plus test. A tracked-file `git status` that is not empty (even CRLF-only) makes `git_dirty=true`: run `git add -u` first, and do not edit tracked files while a run is going. A run started from a different commit gets a different `git_sha`: the resumed run's `git_sha` is the commit of the resume, not of epoch 0-1. The model is a 5-epoch result, not the phase-5-a baseline
+
+### 2026-11-17 — phase-4-e: rough counting demo
+- Status: done (phase 4 skeleton complete: 4-a to 4-f)
+- Done: `configs/export/lineage5.yaml` exports the phase-4-f model (`runs/lineage_5ep/checkpoint_best_total.pth`) to `models/lineage5_export/rfdetr-small.onnx`; `configs/count/line.yaml` now points at that model, at Pixabay clip `data/samples/30949-383991398.mov` (1080p, 25 fps, two-way road with a median) and at a horizontal line y=700 across both carriageways (the old file pointed at `intersection.mp4` / `inference_model.onnx`, neither exists). `tracking.py` draws and counts only confirmed tracks (`tracker_id >= 0`; `LineZone` already ignored id -1, the labels `#-1` were noise). With the line drawn left to right, `in` = moving up the image (away from the camera), `out` = moving down; checked with a synthetic detection, written in the config. `make count` -> `reports/count_demo.mp4` (462 frames, 25 fps, 1920x1080) and `reports/counts.json`
+- Verify: counts `in_total` 11 (car 9, van 2), `out_total` 10 (car 7, motorcycle 3), both directions > 0. Track stability measured, not only eyeballed: 46 tracks in 462 frames, median track life 179 frames, 1 track shorter than 10 frames, no track crosses the line more than once (29 cross once, 17 never). Looked at the video at frames 60/62, 230/232, 400/402: boxes sit on the vehicles and ids carry over between consecutive frames (#1, #5, #12, #16, #19 and so on). `pytest -m "not slow and not gpu"` passes, ruff clean
+- MLflow run / DVC rev: n/a (inference only; outputs in git-ignored `reports/`)
+- Decisions: none
+- Notes for next session: this is a demo, not the count-accuracy KPI: there is no manual count to compare with, so the 21 crossings are unverified. Known weaknesses: the tuk-tuk is labelled `motorcycle` (36 tuk_tuk training boxes, 5 epochs; the phase-3-c data gap), and one stopped car sits on the line the whole clip. **Clip 23712 was tried first and is unusable for tracking**: it is time-lapsed (vehicles jump about 100 px per frame; median IoU of the same vehicle between consecutive frames 0.42 against 0.90-0.99 for the other eight clips), which produced 769 tracks of median life 7 frames and a meaningless count of 86 in / 82 out; no ByteTrack setting fixed it (tested 10 combinations of detector threshold, activation threshold, buffer and minimum frames), the footage was the cause, and I had chosen it from a single still frame. The old default `threshold: 0.4` with ByteTrack defaults works for this model on a normal-speed clip. ByteTrack only starts tracks from detections with confidence >= 0.6-0.7, so a weak model (the 2-epoch smoke one, max confidence 0.59) gives `tracker_id` -1 for every box and a count of 0. Phase 4 order was 4-a, 4-b, leak fix, 4-c, 4-d, 4-f, 4-e: 4-e needed a confident model and 4-f produced it

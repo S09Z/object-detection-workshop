@@ -126,7 +126,7 @@
   - Goal: `make repro` บน subset เล็ก (เช่น 500 รูป, 2 epoch) ผ่านทุก stage จนถึง `bench`
   - Output: `reports/eval.json`, `reports/bench.json` (บน Mac ได้ไม่ถึง 60 FPS ก็ได้ ยังไม่ใช่เป้า)
   - Verify: `uv run dvc repro` exit 0 จนถึง `evaluate` และ `bench` สร้าง report ได้
-- [ ] **phase-4-e** Counting demo แบบหยาบ
+- [x] **phase-4-e** Counting demo แบบหยาบ
   - Goal: `make count` บนคลิปทางแยกได้วิดีโอที่มี box + เส้นนับ
   - Output: `reports/count_demo.mp4`, `reports/counts.json`
   - Verify: เปิดวิดีโอดูด้วยตา track ID ไม่กระโดดจนผิดปกติ และนับได้ > 0 ทั้งสองทิศ

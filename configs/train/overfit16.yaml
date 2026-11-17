@@ -1,0 +1,31 @@
+# phase-4-c: overfit one batch. 16 images, valid = test = the same 16 (made with --same).
+#   uv run python -m vehicle_detect.data.subset --out data/processed/overfit16 --train 16 --same
+#   uv run vd-train --config configs/train/overfit16.yaml
+# Success: val mAP50 on those 16 images >= 0.95. If it cannot get there, suspect the data or labels.
+model: small
+dataset_dir: data/processed/overfit16
+output_dir: runs/overfit16
+epochs: 100
+batch_size: 4
+grad_accum_steps: 1     # 4 optimizer steps per epoch on 16 images
+lr: 1.0e-4
+early_stopping: false
+checkpoint_interval: 50
+
+seed: 42
+best_model_metric: map
+run_test: false
+keep_last_checkpoints: 2
+log_checkpoint_artifact: false   # a throw-away run: do not copy the checkpoint into MLflow
+
+train_kwargs:
+  amp_dtype: bf16
+  num_workers: 0         # 16 images: worker start-up on Windows costs more than the data loading
+  eval_batch_size: 8
+
+model_kwargs:
+  gradient_checkpointing: false
+
+mlflow:
+  experiment: vehicle-detect
+  run_name: overfit-16

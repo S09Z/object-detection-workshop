@@ -118,7 +118,7 @@
   - Goal: ยืนยันว่า `inference.postprocess` ให้ผลเท่ากับ `model.predict()` (background slot, ลำดับ class, พิกัด box)
   - Output: `tests/test_parity.py` (mark `slow`) เทียบบนรูปตัวอย่าง 10 รูป
   - Verify: box IoU ≥ 0.99 และ class ตรงกันทุก detection ที่ conf ≥ 0.5
-- [ ] **phase-4-c** Overfit one batch
+- [x] **phase-4-c** Overfit one batch
   - Goal: train บน 16 รูป ให้ loss ลดเกือบ 0 (ถ้าทำไม่ได้แปลว่ามี bug ใน data/label)
   - Output: MLflow run `overfit-16`
   - Verify: train mAP50 บน 16 รูปนั้น ≥ 0.95

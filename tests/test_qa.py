@@ -76,3 +76,32 @@ def test_box_issues_finds_tiny_huge_outside_and_duplicate_boxes():
         "outside the image",
         "duplicate box (IoU > 0.9)",
     }
+
+
+def test_assign_scene_ids_groups_same_camera_view_and_leaves_others_alone(tmp_path):
+    rng = np.random.default_rng(0)
+    view = rng.integers(0, 255, (48, 64), dtype=np.uint8)
+    other = rng.integers(0, 255, (48, 64), dtype=np.uint8)
+    car = view.copy()
+    car[20:28, 20:36] = 255  # same camera, a different vehicle in the frame
+    for name, arr in (("a", view), ("b", car), ("c", other), ("d", view)):
+        Image.fromarray(arr).save(tmp_path / f"{name}.png")
+
+    def img(i, name, **kw):
+        return {"id": i, "file_name": str(tmp_path / f"{name}.png"), **kw}
+
+    coco = {
+        "images": [
+            img(0, "a", source="mio_tcd"),
+            img(1, "b", source="mio_tcd"),
+            img(2, "c", source="mio_tcd"),
+            img(3, "d", source="coco"),  # not listed: untouched even though it matches
+            img(4, "a", source="mio_tcd", camera_id="cam9"),  # already has an id: untouched
+        ]
+    }
+    n = qa.assign_scene_ids(coco, ["mio_tcd"])
+
+    ids = [i.get("camera_id") for i in coco["images"]]
+    assert n == 2
+    assert ids[0] == ids[1] != ids[2]
+    assert ids[3] is None and ids[4] == "cam9"

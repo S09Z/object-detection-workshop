@@ -10,14 +10,14 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-11-17 · by: Claude (phase-4-b: ONNX parity test)
+> Last updated: 2026-11-17 · by: Claude (camera-level leak fixed with pseudo camera ids; baseline re-measured)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
-| Current sub-task | camera-level leak fix (new, before phase-4-c) then **phase-4-c** overfit one batch |
+| Current sub-task | **phase-4-c**: overfit one batch |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-4-b: `OnnxDetector` agrees with `RFDETR.predict()` on 10 test images (IoU >= 0.99, same classes); `postprocess` now clips boxes to the image |
+| Last done | camera-level leak fix: MIO-TCD clustered into 208 pseudo camera ids before the split (same-scene pairs across splits 5,412 -> 2); baseline re-measured on the new test split: 0.568 |
 | Next up | phase-3-g (`dvc add data/raw` + processed) → phase 4 (baseline, parity test, overfit one batch); phase-3-f when footage exists (it would close the tuk_tuk / songthaew gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
@@ -36,7 +36,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 | Metric | Target | Best | MLflow run / DVC rev |
 |---|---|---|---|
-| test mAP50-95 (5 COCO classes, pretrained, no training) | > baseline phase-4-a | 0.527 strict / 0.530 merged | `reports/baseline_pretrained.json` (git-ignored), code `src/vehicle_detect/baseline.py` |
+| test mAP50-95 (5 COCO classes, pretrained, no training; 808-image test split after the leak fix) | > baseline phase-4-a | 0.568 strict / 0.565 merged | `reports/baseline_pretrained.json` (git-ignored), code `src/vehicle_detect/baseline.py` |
 | Count accuracy vs manual count | ≥ 95% (confirm in phase-2-a) | — | — |
 | End-to-end FPS (target device) | ≥ 60 | — | — |
 | p99 frame time | ≤ 16.7 ms | — | — |
@@ -408,3 +408,11 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: `tests/test_parity.py` is marked `slow` (marker added to `pyproject.toml`); it skips when no `runs/*/checkpoint_best_total.pth` or no `data/processed/coco/test` exists, and `PARITY_CHECKPOINT` picks a checkpoint. It ran on the CUDA execution provider, not CPU. On native Windows the TensorRT provider fails to load (`nvinfer_10.dll` missing) and ONNX Runtime falls back to CUDA: TensorRT must be installed before phase-6 (D-019 risk list). The checkpoint used was the 2-epoch smoke one, which is enough for parity but says nothing about accuracy
+
+### 2026-11-17 — camera-level leak: pseudo camera ids for MIO-TCD, baseline re-measured (follow-up to phase-3-e)
+- Status: done (not a PLAN.md sub-task; the leak was recorded in phase-3-e and is a precondition for a train that counts under D-017)
+- Done: `qa.assign_scene_ids` gives every MIO-TCD image a pseudo `camera_id` before `group_split`, enabled by `split.scene_cluster_sources: [mio_tcd]` in `configs/data/thai_traffic.yaml`; `vd-prepare` calls it and prints `[scenes] N pseudo camera ids`. Two metrics were tried and rejected on visual evidence: (1) dHash <= 6 single-link (1,192 groups) left real same-camera pairs across splits: 8 of 8 sampled pairs at dHash 7-8 were one camera (a large vehicle changes enough hash bits); (2) 70% pixel match on a 32x24 thumbnail (399 groups) still missed the same camera at another hour or at night. Final metric: sign of (64x48 grayscale - Gaussian blur) where contrast exists, score = (agreeing - disagreeing) / (pixels with an edge in either) >= 0.4, single-link. On the 5,000 MIO images: 208 groups, largest 403 (8%); 0.5 gives 332 groups with the same largest group, 0.3 chains into one 3,488-image group, so 0.4 sits on a stable plateau. 8 of 8 pairs joined only between 0.4 and 0.5 were one camera (incl. night frames)
+- Verify: `make prepare`-equivalent (`uv run --no-sync vd-prepare`) -> train 6,581 / valid 821 / test 808 images (was 6,568 / 796 / 791). `vd-qa`: duplicate pairs across splits 0; same-scene pairs (dHash <= 4) across splits **2** (was 5,412; valid 1 image, test 0, was 286 and 306), the 2 being a COCO still vs MIO frames (different datasets). At the looser dHash <= 8: 207 pairs (was 707 after the first attempt), but 8 of 8 sampled remaining mio-mio pairs are different cameras, so they are dHash false positives. Class counts after the split: valid and test still have all 7 classes with data, tuk_tuk 36 / songthaew 27 remain train-only. `pytest -m "not slow and not gpu"` all pass (42); ruff clean on the touched files. Baseline re-run on the 808-image test split: strict mAP50-95 0.568 (car 0.499, bus 0.793, truck 0.420, motorcycle 0.605, bicycle 0.522), merged 0.565
+- MLflow run / DVC rev: n/a. `data/processed` is not DVC-tracked (derived; `data/raw` is, phase-3-g)
+- Decisions: none
+- Notes for next session: the baseline moved from 0.527 to 0.568 only because the test images changed (truck 0.29 -> 0.42), so any comparison must name the split it was measured on; the 2-epoch smoke runs and their 0.599 were trained and tested on the old, leaky split and are obsolete. The leak is removed by construction for the MIO-TCD view metric, but the metric cannot see a camera that changes its framing; it is checked by sampling (16 pairs by eye), not proven. Roboflow (clip ids) and visaitech (video ids) already had camera ids; COCO stills are not from fixed cameras. `docs/label_issues.md` was regenerated by `vd-qa`. The scene features are recomputed on every prepare (about 35 s for 5,000 images)

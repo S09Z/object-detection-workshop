@@ -114,7 +114,7 @@
   - Goal: RF-DETR pretrained COCO รันบน test set โดย map car/bus/truck/motorcycle/bicycle
   - Output: ค่า mAP baseline ใน `PROGRESS.md` (ตัวเลขที่ต้องเอาชนะ)
   - Verify: มีค่า mAP50-95 ต่อ class ที่ COCO รู้จัก
-- [ ] **phase-4-b** ONNX parity test
+- [x] **phase-4-b** ONNX parity test
   - Goal: ยืนยันว่า `inference.postprocess` ให้ผลเท่ากับ `model.predict()` (background slot, ลำดับ class, พิกัด box)
   - Output: `tests/test_parity.py` (mark `slow`) เทียบบนรูปตัวอย่าง 10 รูป
   - Verify: box IoU ≥ 0.99 และ class ตรงกันทุก detection ที่ conf ≥ 0.5

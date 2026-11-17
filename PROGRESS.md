@@ -10,14 +10,14 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-11-16 · by: Claude (phase-4-a: COCO-pretrained RF-DETR Small baseline)
+> Last updated: 2026-11-17 · by: Claude (phase-4-b: ONNX parity test)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
-| Current sub-task | **phase-4-b**: ONNX parity test (phase-3-f stays deferred, D-016) |
+| Current sub-task | camera-level leak fix (new, before phase-4-c) then **phase-4-c** overfit one batch |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-4-a: COCO-pretrained RF-DETR Small on the test split, mAP50-95 0.527 over the 5 COCO-known classes (the number to beat) |
+| Last done | phase-4-b: `OnnxDetector` agrees with `RFDETR.predict()` on 10 test images (IoU >= 0.99, same classes); `postprocess` now clips boxes to the image |
 | Next up | phase-3-g (`dvc add data/raw` + processed) → phase 4 (baseline, parity test, overfit one batch); phase-3-f when footage exists (it would close the tuk_tuk / songthaew gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
@@ -400,3 +400,11 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: n/a (inference only; the JSON is in git-ignored `reports/`)
 - Decisions: none
 - Notes for next session: this is the bar a trained model must clear on the same 5 classes; the 2-epoch smoke fine-tune scored test mAP50-95 0.599 over 7 classes, which is not comparable (different class set) and is inflated by the camera-level leak. Test GT has 287 pickup + 59 van boxes that the baseline cannot name, so the real 9-class gap is larger than 0.527 suggests; tuk_tuk / songthaew have no test boxes at all (phase-3-c gap). `truck` is the weakest class (0.29): COCO "truck" vs our truck/pickup/van boundary. Next: phase-4-b (ONNX parity test, needs an ONNX export of the model)
+
+### 2026-11-17 — phase-4-b: ONNX parity test
+- Status: done
+- Done: exported the 2-epoch smoke checkpoint to ONNX (fp32, batch 1; outputs `dets` 1x300x4 and `labels` 1x300x10 = 9 classes + background slot, as `postprocess` assumes) and compared `OnnxDetector` with `RFDETR.predict()` on 10 test images (every 79th, conf >= 0.5, 28 reference detections). First run: 27/28 matched, 1 miss at IoU 0.9875 on a tiny box touching the left edge: the ONNX box had x1 = -0.4 while `predict()` clips to 0. Everything else agreed within 0.03 px. Fix: `postprocess` clips boxes to the image. Float-before-resize in `preprocess` was tried and did not change the miss, so `preprocess` is unchanged
+- Verify: `uv run pytest -m slow tests/test_parity.py` -> passed (every reference detection has an ONNX box with IoU >= 0.99 and the same class; equal detection counts per image). `pytest -m "not slow and not gpu"` -> all pass (41), `ruff check` / `ruff format --check` clean. New CPU test `test_postprocess_clips_boxes_to_the_image`
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: `tests/test_parity.py` is marked `slow` (marker added to `pyproject.toml`); it skips when no `runs/*/checkpoint_best_total.pth` or no `data/processed/coco/test` exists, and `PARITY_CHECKPOINT` picks a checkpoint. It ran on the CUDA execution provider, not CPU. On native Windows the TensorRT provider fails to load (`nvinfer_10.dll` missing) and ONNX Runtime falls back to CUDA: TensorRT must be installed before phase-6 (D-019 risk list). The checkpoint used was the 2-epoch smoke one, which is enough for parity but says nothing about accuracy

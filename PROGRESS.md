@@ -10,14 +10,14 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-11-17 · by: Claude (phase-4-c: overfit one batch)
+> Last updated: 2026-11-17 · by: Claude (phase-4-d: smoke pipeline)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
-| Current sub-task | **phase-4-d**: smoke run of the whole pipeline |
+| Current sub-task | **phase-4-e**: counting demo |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-4-c: RF-DETR Small overfits 16 images, val mAP50 on those 16 = 1.000 (0.987 at epoch 20) |
+| Last done | phase-4-d: `make repro-smoke` runs subset -> train -> export -> evaluate -> bench to exit 0 on a 500-image subset (2 epochs) |
 | Next up | phase-3-g (`dvc add data/raw` + processed) → phase 4 (baseline, parity test, overfit one batch); phase-3-f when footage exists (it would close the tuk_tuk / songthaew gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
@@ -424,3 +424,12 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: `overfit-16` (id `eb830f9ccf90403c8e7aa8f066e82a8e`, experiment vehicle-detect); tags `git_sha=82a8db1`, `git_dirty=true`, `dvc_data_rev=unknown`, so it does not count under D-017 (a throw-away sanity run); checkpoint not logged as an artifact
 - Decisions: none
 - Notes for next session: the pipeline can fit labelled data, so the labels, class mapping and COCO conversion are consistent with the model's outputs; this does not prove generalisation. If phase-4-d or later shows a flat loss, the data path is not the first suspect any more. `runs/overfit16` and `data/processed/overfit16` are git-ignored
+
+### 2026-11-17 — phase-4-d: smoke run of the whole pipeline
+- Status: done (with one deviation from the PLAN wording, below)
+- Done: `pipelines/smoke/dvc.yaml` (own `dvc.lock`, tracked): `subset` (500 train / 100 valid / 100 test from `data/processed/coco`, `vehicle_detect.data.subset`) -> `train` (`configs/train/smoke.yaml`, 2 epochs, `num_workers: 2`) -> `export` (`configs/export/smoke.yaml`, ONNX fp32) -> `evaluate` -> `bench` (`configs/bench/smoke.yaml`, 200 frames of one Pixabay clip, gate disabled: `target_fps: 0`). All outputs go to `runs/smoke`, `models/smoke_export`, `reports/smoke/`, `data/processed/smoke`, so the real pipeline paths are untouched. `make repro-smoke` = `uv run --no-sync dvc repro pipelines/smoke/dvc.yaml` (`--no-sync`: a plain `uv run` syncs only the dev group and would uninstall dvc mid-run). `evaluate.py` reads an optional `eval_report_path`. Two real defects found by the run and fixed: (1) `OnnxDetector` could not use the CUDA provider in a process that had not imported torch (`cudnn64_9.dll` LoadLibrary failed), so `vd-evaluate`, `vd-bench`, `vd-count` all failed on Windows; it now calls `onnxruntime.preload_dlls()` when the CUDA provider is present; (2) `configs/bench/realtime.yaml` pointed at `models/export/inference_model.onnx` but `vd-export` writes `rfdetr-small.onnx`
+- Verify: `make repro-smoke` -> exit 0 (first attempt failed at `evaluate` on the cuDNN defect; after the fix `dvc repro` skipped the unchanged `subset`/`train`/`export` and ran `evaluate` and `bench`). `reports/smoke/eval.json`: mAP50-95 0.235, mAP50 0.339 (100 test images, 2 epochs, so only a plumbing check). `reports/smoke/bench.json`: 200 frames, 66.7 FPS, p50 14.3 ms, p99 20.1 ms (decode 1.8, detect 13.1, track 0.05 ms), provider CUDAExecutionProvider (fp32, no TensorRT), so this is NOT the 60 FPS gate result: the gate is off in this config. `ruff check src tests`, `ruff format --check`, `pytest -m "not slow and not gpu"` all pass
+- Deviation: the PLAN Verify says `uv run dvc repro`; running that on the real `dvc.yaml` would re-run `prepare`, train 50 epochs on the full set and overwrite `data/processed/coco`, `runs/rfdetr_small_rtx5070` and `models/export`, which contradicts the Goal ("on a small subset, 2 epochs"). The same chain was run through the separate smoke pipeline instead, and the reports are `reports/smoke/eval.json` and `reports/smoke/bench.json` rather than `reports/eval.json` / `reports/bench.json` (DVC refuses two stages declaring one output). Say so if the literal paths matter
+- MLflow run / DVC rev: run `smoke-pipeline` (experiment vehicle-detect), `git_dirty=true`, does not count under D-017
+- Decisions: none
+- Notes for next session: the smoke `subset` stage deliberately has no dependency on `data/processed/coco` (it is an output of the real `prepare` stage and would make dvc re-run it); after a new `make prepare` run it with `dvc repro -f`. First end-to-end timing on the RTX 5070 with CUDA EP fp32: 66.7 FPS / p99 20.1 ms including a tracker; the p99 misses the 16.7 ms budget, TensorRT fp16 (phase-6) is the lever. The TensorRT provider still cannot load on this machine (`nvinfer_10.dll`)

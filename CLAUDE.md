@@ -124,6 +124,7 @@ or `make repro` (DVC, re-runs changed stages only).
   `uv run pytest -m slow tests/test_parity.py`); boxes are clipped to the image like `predict()`.
   On native Windows the ONNX Runtime TensorRT provider cannot load (`nvinfer_10.dll` missing), so
   `OnnxDetector` falls back to CUDA; install TensorRT before the phase-6 FPS gate.
+  `OnnxDetector` calls `onnxruntime.preload_dlls()` so the CUDA provider finds cuDNN without torch.
 - `uv.lock` must be generated on a machine that can reach the PyTorch CUDA index (`cu130`).
   Never switch the index to cu128/cu126: PyTorch 2.14 dropped cu128, and cu126 has no sm_120 (RTX 50xx) kernels.
 - RTX 5070 Small config ran on real hardware (2026-10-29, PROGRESS.md): peak 6.4 GB of 12 GB, no OOM.

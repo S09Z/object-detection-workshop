@@ -74,6 +74,10 @@ class OnnxDetector:
         import onnxruntime as ort
 
         available = ort.get_available_providers()
+        if "CUDAExecutionProvider" in available:
+            # find CUDA/cuDNN in the installed nvidia wheels even when torch was not imported:
+            # without it vd-evaluate / vd-bench / vd-count fail on Windows (cudnn64_9.dll)
+            ort.preload_dlls()
         providers = [p for p in PREFERRED_PROVIDERS if p in available]
         self.session = ort.InferenceSession(self.model_path, providers=providers)
         inp = self.session.get_inputs()[0]

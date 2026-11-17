@@ -122,7 +122,7 @@
   - Goal: train บน 16 รูป ให้ loss ลดเกือบ 0 (ถ้าทำไม่ได้แปลว่ามี bug ใน data/label)
   - Output: MLflow run `overfit-16`
   - Verify: train mAP50 บน 16 รูปนั้น ≥ 0.95
-- [ ] **phase-4-d** Smoke run ทั้ง pipeline
+- [x] **phase-4-d** Smoke run ทั้ง pipeline
   - Goal: `make repro` บน subset เล็ก (เช่น 500 รูป, 2 epoch) ผ่านทุก stage จนถึง `bench`
   - Output: `reports/eval.json`, `reports/bench.json` (บน Mac ได้ไม่ถึง 60 FPS ก็ได้ ยังไม่ใช่เป้า)
   - Verify: `uv run dvc repro` exit 0 จนถึง `evaluate` และ `bench` สร้าง report ได้

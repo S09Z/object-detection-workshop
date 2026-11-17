@@ -1,0 +1,14 @@
+# phase-4-d smoke evaluate + bench: wiring only. target_fps 0 and a huge p99 budget make the gate
+# pass; the real 60 FPS gate is configs/bench/realtime.yaml (>= 5 min of footage on the target device).
+model_path: models/smoke_export/rfdetr-small.onnx
+test_dir: data/processed/smoke/test
+video: data/samples/112539-695117337.mp4
+num_classes: 9
+threshold: 0.4
+warmup_frames: 20
+max_frames: 200
+target_fps: 0
+p99_budget_ms: 1000
+with_tracking: true
+report_path: reports/smoke/bench.json
+eval_report_path: reports/smoke/eval.json

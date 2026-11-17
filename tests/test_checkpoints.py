@@ -21,6 +21,15 @@ def test_resolve_resume(tmp_path):
         resolve_resume(str(tmp_path / "missing.ckpt"), tmp_path)
 
 
+def test_resolve_resume_falls_back_to_the_newest_archive_without_last(tmp_path):
+    for epoch in (0, 1, 9):  # 9 > 1 numerically, not alphabetically
+        (tmp_path / f"checkpoint_{epoch}.ckpt").write_bytes(b"x")
+    (tmp_path / BEST).write_bytes(b"best")
+    assert resolve_resume("auto", tmp_path) == str(tmp_path / "checkpoint_9.ckpt")
+    (tmp_path / LAST).write_bytes(b"last")  # last.ckpt wins when it exists
+    assert resolve_resume("auto", tmp_path) == str(tmp_path / LAST)
+
+
 def test_prune_keeps_newest_archives_and_never_best_or_last(tmp_path):
     for epoch in (9, 19, 29, 39):
         (tmp_path / f"checkpoint_{epoch}.ckpt").write_bytes(b"x")

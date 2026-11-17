@@ -3,7 +3,8 @@
 RF-DETR writes into `output_dir`:
   checkpoint_best_total.pth   best of EMA/regular by val `best_model_metric` (the one we ship)
   checkpoint_best_ema.pth / checkpoint_best_regular.pth
-  last.ckpt                   latest full training state (overwritten every epoch) -> resume
+  last.ckpt                   latest full training state (overwritten every epoch) -> resume;
+                              not written when checkpoint_interval == 1 (newest archive then)
   checkpoint_<epoch>.ckpt     interval archives every `checkpoint_interval` epochs (kept forever)
 """
 
@@ -24,8 +25,15 @@ def resolve_resume(resume: str | None, output_dir: str | Path) -> str | None:
     if not resume:
         return None
     if resume == "auto":
-        last = Path(output_dir) / LAST
-        return str(last) if last.exists() else None
+        out = Path(output_dir)
+        if (out / LAST).exists():
+            return str(out / LAST)
+        # RF-DETR writes no last.ckpt when checkpoint_interval == 1: resume from the newest archive
+        # instead of silently starting again from epoch 0
+        archives = [
+            (int(m[1]), p) for p in out.glob("checkpoint_*.ckpt") if (m := _ARCHIVE.search(p.name))
+        ]
+        return str(max(archives)[1]) if archives else None
     path = Path(resume)
     if not path.exists():
         raise FileNotFoundError(f"resume checkpoint not found: {path}")

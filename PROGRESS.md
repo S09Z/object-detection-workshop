@@ -10,15 +10,15 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-27 · by: Claude (phase-3-d EDA on the Mac)
+> Last updated: 2026-10-29 · by: Claude (phase-3-b done, merged with the Mac's phase-3-d EDA)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (now on the RTX 5070 PC, WSL2) |
-| Current sub-task | **phase-3-b** (phase-3-d EDA done on Mac data; re-run on the 5070 PC with roboflow_thai): download and convert to COCO (`visaitech_mixed`, `coco`, `mio_tcd`, `roboflow_thai` done; clips pending) |
-| Status | `in progress` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-d EDA (2026-10-27); per-source commercial flag (PR #11) |
-| Next up | phase-3-e Label QA; re-download the 4 truncated COCO images; phase-3-b clips (`data/samples/`, >= 5 min) → phase-3-c (tuk_tuk / songthaew are a gap, valid/test have none); paused: per-source commercial flag in `prepare` |
+| Current sub-task | **phase-3-c**: prepare + group split (tuk_tuk / songthaew gap; valid/test have none); phase-3-e Label QA follows |
+| Status | `not started` <!-- not started / in progress / blocked / done --> |
+| Last done | phase-3-b: 4 datasets + 9 Pixabay clips (305 s) in `data/samples/`; phase-3-d EDA (Mac, 2026-10-27); per-source commercial flag (PR #11) |
+| Next up | phase-3-c (record the gap) → phase-3-e Label QA; re-run the EDA on the 5070 PC with roboflow_thai; re-download the 4 truncated COCO images |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
 
@@ -310,3 +310,10 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: the 4 corrupt raw files (65,536 bytes each) are still in `data/raw/coco/images`; re-downloading COCO would replace them (needs the user's OK). Also fixed by accident of the clean-up: no cross-split duplicate files remain
+### 2026-10-28 — phase-3-b done: traffic clips in data/samples
+- Status: done
+- Done: 9 hand-downloaded Pixabay clips (Bangkok, elevated 1080p) in `data/samples/`, 305.0 s = 5.08 min, with `data/samples/SOURCES.md` (URL, length, format per clip) and a row in `docs/licenses.md`; frames of every clip were reviewed, 5 clips rejected for close-up people, moving camera or night blur (30953, 31958, 31964, 31967, 30945; the last one is kept outside the repo in `~/rejected-clips/`)
+- Verify: `data/raw/{visaitech_mixed,coco,mio_tcd,roboflow_thai}/annotations.coco.json` have 293 / 3,000 / 5,000 / 210 images, each has `SOURCE.json`, each has a row in `docs/licenses.md` with original and mirror license; clips total 305.0 s (>= 300 s)
+- MLflow run / DVC rev: n/a (`dvc add` is phase-3-g)
+- Decisions: none
+- Notes for next session: Pixabay's Terms of Service prohibit data mining for machine learning purposes and bulk copying, so the clips are **bench / demo only**: never train, label or publish with them (chosen by the user on 2026-10-28, who accepts the risk). Pixabay's CDN refuses scripted downloads, so the clips were fetched by hand. 4 of the 9 clips have a slowly moving camera, so a count accuracy check against manual counts (phase-8) still needs fixed-camera footage, ideally the user's own. Only ~1 clip shows a tuk-tuk (30949). Next: phase-3-c is not ticked until tuk_tuk / songthaew have >= 200 train boxes or the gap is recorded

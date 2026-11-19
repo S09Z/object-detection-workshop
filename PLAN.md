@@ -86,7 +86,7 @@
   - Output: `images/` และ `annotations.coco.json` ต่อ source โดยใส่ `camera_id` ในแต่ละ image ถ้ามี
   - Verify: ทุก source มี `data/raw/<source>/annotations.coco.json` ที่จำนวน images > 0 และมี `SOURCE.json`
     และแถวใน `docs/licenses.md` ที่ระบุทั้ง license ต้นฉบับและ license ของ mirror
-- [ ] **phase-3-c** Prepare + group split
+- [x] **phase-3-c** Prepare + group split
   - Goal: `make prepare` สร้าง train/valid/test แบบแยกตามกล้อง
   - Output: `data/processed/coco/`, `reports/data_stats.json`
   - Verify: `make prepare` สำเร็จ, ทุก class มี box ใน train ≥ 200 (ถ้าไม่ถึงให้บันทึกไว้เป็น gap)

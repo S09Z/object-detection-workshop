@@ -94,7 +94,7 @@
   - Goal: ดูรูปจริง ≥ 100 รูป, class balance, ขนาด box, กลางวัน/กลางคืน
   - Output: สรุป 5–10 ข้อสังเกตใน `PROGRESS.md` (เช่น "มอเตอร์ไซค์ 40% เป็น box < 32×32")
   - Verify: notebook รันจบโดยไม่ error (`uv run jupyter nbconvert --execute --to notebook --stdout notebooks/01_eda_dataset.ipynb > /dev/null`)
-- [ ] **phase-3-e** Label QA (`notebooks/02_label_quality_fiftyone.ipynb`)
+- [x] **phase-3-e** Label QA (`notebooks/02_label_quality_fiftyone.ipynb`)
   - Goal: หา duplicate, near-duplicate ข้าม split และ label ผิด
   - Output: รายการ image ที่ต้องแก้ใน `docs/label_issues.md`
   - Verify: ไม่มี near-duplicate ระหว่าง train กับ test (หรือบันทึกจำนวนที่ลบออก)

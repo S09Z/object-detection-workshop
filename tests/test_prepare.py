@@ -1,6 +1,7 @@
 import json
 import sys
 
+import numpy as np
 import yaml
 from PIL import Image
 
@@ -30,7 +31,10 @@ def _write_source(raw, name, n_cams):
     (raw / name / "images").mkdir(parents=True)
     images, anns = [], []
     for i in range(n_cams):
-        Image.new("RGB", (64, 64)).save(raw / name / "images" / f"{i}.jpg")
+        # distinct pictures: identical ones would be removed as duplicates across splits
+        rng = np.random.default_rng(sum(map(ord, name)) * 100 + i)
+        noise = rng.integers(0, 255, (64, 64, 3), dtype=np.uint8)
+        Image.fromarray(noise).save(raw / name / "images" / f"{i}.jpg")
         images.append({"id": i, "file_name": f"{i}.jpg", "camera_id": f"{name}{i}"})
         anns.append({"id": i, "image_id": i, "category_id": 1, "bbox": [0, 0, 5, 5], "area": 25})
     coco = {"images": images, "annotations": anns, "categories": [{"id": 1, "name": "Car"}]}

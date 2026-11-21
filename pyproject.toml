@@ -46,6 +46,7 @@ data = [
 [project.scripts]
 vd-download = "vehicle_detect.data.download:main"
 vd-prepare = "vehicle_detect.data.prepare:main"
+vd-qa = "vehicle_detect.data.qa:main"
 vd-train = "vehicle_detect.train:main"
 vd-evaluate = "vehicle_detect.evaluate:main"
 vd-export = "vehicle_detect.export:main"

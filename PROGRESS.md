@@ -10,14 +10,14 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-29 · by: Claude (phase-3-e Label QA done)
+> Last updated: 2026-11-13 · by: Claude (phase-3-g: `data/raw` versioned with DVC)
 
 | Field | Value |
 |---|---|
-| Current phase | phase-3 — Data (now on the RTX 5070 PC, WSL2) |
-| Current sub-task | **phase-3-f**: own Thai footage + pre-label (deferred, D-016) or phase-3-g: `dvc add` the data |
+| Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
+| Current sub-task | **phase-4-a**: pretrained baseline (phase-3-f stays deferred, D-016) |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-e: duplicates across splits = 0 after dedup in `prepare`; camera-level leak recorded (`docs/label_issues.md`) |
+| Last done | phase-3-g: `data/raw` tracked by `data/raw.dvc` (8,511 files, 720,825,243 bytes) and pushed to the local remote `~/dvc-store` |
 | Next up | phase-3-g (`dvc add data/raw` + processed) → phase 4 (baseline, parity test, overfit one batch); phase-3-f when footage exists (it would close the tuk_tuk / songthaew gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
@@ -29,7 +29,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 | ruff check / format | ✅ pass (project ruff via uv; an older ruff had missed 2 E501 + 1 format diff in convert.py) | 2026-10-20 |
 | `./init.sh` (WSL2) | ✅ OK | 2026-10-21 |
 | `uv sync --all-groups` | ✅ pass (Mac, Python 3.13 venv) | 2026-10-20 |
-| `make gpu-check` (RTX 5070) | ✅ OK, sm_120, bf16 True | 2026-10-21 |
+| `make gpu-check` (RTX 5070, native Windows) | ✅ OK, torch 2.14.1+cu130, sm_120, bf16 True | 2026-10-29 |
 | ruff + pytest `-m "not gpu"` (Mac, development @ f8cffa1) | ✅ clean, 30 passed | 2026-10-26 |
 
 ### Key metrics (best so far)
@@ -48,7 +48,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 | Model candidate | — (planned: RF-DETR Small, trained on RTX 5070 with bf16) |
 | Production model | — |
 | Dataset version (DVC) | — (remote: local disk / NAS `~/dvc-store`, D-015) |
-| Target device | RTX 5070 12 GB PC, WSL2 Ubuntu 24.04, CUDA 13 / driver ≥ 580 (D-013, D-014) |
+| Target device | RTX 5070 12 GB PC, native Windows (driver 617.14), CUDA 13 / torch cu130 (D-019, D-014) |
 | Real Thai footage | none yet; use public data + freely licensed clips (D-016) |
 
 ### Open questions for the user
@@ -335,3 +335,60 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: the camera-level leak should be fixed before phase 5 reports any metric on pickup/van (e.g. a pseudo `camera_id` from clustering the dHash / thumbnails of MIO-TCD, then `group_by: camera_id`); decide with the user whether to do it before or after phase-3-g. Re-run `vd-qa` after every `make prepare`. `vd-qa` flags MAD <= 3 as duplicate, so two empty-road frames from one camera at the same light can be dropped from valid/test too (conservative; train is never touched)
+
+### 2026-10-29 — move the RTX 5070 PC from WSL2 to native Windows (D-019)
+- Status: done (setup; not a PLAN.md sub-task, requested by the user)
+- Done: `pyproject.toml` adds `win32` to `tool.uv.environments` and routes torch / torchvision to the `cu130` index and `onnxruntime-gpu` to `win32`; `uv.lock` re-resolved (389 packages, adds pywin32 / pywinpty / waitress). `Makefile`: on Windows `SHELL` is Git Bash and `HOME` comes from `USERPROFILE`; `NVIDIA_SMI` points to `C:/Windows/Sysnative/nvidia-smi.exe` because the chocolatey `make` is 32-bit and cannot see `nvidia-smi.exe` in System32. `.gitattributes`: `* text=auto eol=lf` (the Windows working copy had CRLF, which broke `init.sh`; converted in place). `data/raw` and `data/samples` copied from the WSL clone (8,511 files, same count). `make setup` installed pre-commit and the `nbstripout` filter on Windows (before this, a commit from this clone could have put notebook outputs into git). D-013 is Superseded by D-019; `CLAUDE.md` machine line updated
+- Verify: `make gpu-check` -> torch 2.14.1+cu130, RTX 5070 11.9 GB sm_120, bf16 supported: True, OK: CUDA kernels run on this GPU. `./init.sh` (Git Bash) -> `OK — environment is clean` (ruff, 38 tests). `make prepare` on Windows reproduces the WSL result exactly: train 6,568 / valid 796 / test 791, dedup valid 25 / test 30
+- MLflow run / DVC rev: n/a
+- Decisions: D-019 (Accepted, decided by the user)
+- Notes for next session: a Jupyter kernel started from this `.venv` locks `pandas` and makes `uv sync` fail with "Access is denied"; stop the kernel first. `uv run` syncs only the `dev` group, so after `uv sync --all-groups` a plain `uv run` may uninstall a couple of data-group packages and reinstall them; use `uv sync --all-groups` before notebook / FiftyOne work. Still unverified on Windows: a real `make train-5070` (peak VRAM, s/epoch, DataLoader workers use spawn), TensorRT, `onnxruntime-gpu` with CUDA 13 (phase-6). The WSL clone (`~/object-detection-workshop` in the Ubuntu distro) is untouched and can be removed by the user when they no longer need it; it also holds `data/processed` and an 8.4 GB `data/_downloads` cache
+
+### 2026-10-29 — first real RF-DETR Small train on the RTX 5070 (native Windows, smoke)
+- Status: done (smoke test, not a PLAN.md sub-task; requested by the user)
+- Done: `pyproject.toml` now depends on `rfdetr[train,loggers]>=1.11`; before this `.train()` raised "RF-DETR training dependencies are missing" (`pytorch_lightning` was not in `uv.lock`) on every platform. `uv.lock` re-resolved (adds pytorch-lightning 2.6.6, torchmetrics, wandb, tensorboard, roboflow, pycocotools and others); torch stays 2.14.1+cu130. Smoke config = `rfdetr_small_rtx5070.yaml` with `epochs: 2`, `early_stopping: false`, output `runs/smoke_win_5070` (batch 4 x accum 4, bf16, `num_workers: 8`, eval batch 8, unchanged)
+- Verify: `uv run vd-train --config <smoke.yaml>` -> exit 0, no OOM, no DataLoader error with `num_workers: 8` under Windows spawn. 810 s wall (about 215 s per epoch incl. val). val mAP50-95 (EMA) 0.538 -> 0.573; test mAP50-95 0.599, mAP50 0.794; train loss 5.70 -> 5.00. `checkpoint_best_total.pth` saved and load-tested
+- MLflow run / DVC rev: `8a32ae70366c4fd791884642c9c59aad` (experiment vehicle-detect, run `smoke-win-5070`); `git_dirty=true`, `dvc_data_rev=unknown`, so it does **not** count under D-017
+- Decisions: none
+- Notes for next session: **peak VRAM is NOT measured** (CLAUDE.md §6 still owes it): the sampler used `Sysnative
+vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-bit processes such as the chocolatey `make`; from Git Bash use `C:/Windows/System32/nvidia-smi.exe`). Re-run 1 epoch with a working sampler. The 2-epoch test mAP is high because valid/test share MIO-TCD camera views with train (camera-level leak, see `docs/label_issues.md`); do not read 0.599 as a real generalisation number. `uv sync` printed "Access is denied" on `orjson` (a process holds the .pyd); imports still work
+
+### 2026-10-29 — RTX 5070 peak VRAM and s/epoch (1-epoch smoke, native Windows)
+- Status: done (measurement; closes the VRAM item left open by the entry above)
+- Done: re-ran `rfdetr_small_rtx5070.yaml` with `epochs: 1`, output `runs/smoke_win_5070_1ep`, sampling `nvidia-smi` every 2 s (`C:/Windows/System32/nvidia-smi.exe` from Git Bash)
+- Verify: `uv run vd-train --config <smoke1.yaml>` -> exit 0. Peak GPU memory **6,398 MiB** of 12,227 (about 4.7 GB above the ~1.7 GB desktop baseline; nvidia-smi counts PyTorch's cached allocator pool, so the true need is lower). Batch 4 x accum 4, bf16, no OOM, so there is headroom for a larger physical batch. Wall 633 s for the whole command (about 9 min 30 s from first to last log line: model load, 1 train epoch, val, test). Epoch 1 val mAP50-95 (EMA) 0.537. GPU utilisation peaked at 82% but averaged only about 38% during the train window (22% over the whole run), so the GPU is partly starved; likely dataloader / CPU bound (`num_workers: 8`, 16 logical cores, Windows spawn). Not yet diagnosed
+- MLflow run / DVC rev: run `smoke-win-5070-1ep` (experiment vehicle-detect); `git_dirty=true` and no DVC data rev, so it does not count under D-017
+- Decisions: none
+- Notes for next session: before the real 50-epoch run, try `batch_size: 8` + `grad_accum_steps: 2` (same effective 16) and compare s/epoch and utilisation as one change; if utilisation stays low, look at dataloader workers / image decode
+
+### 2026-11-09 — why GPU utilisation was low: worker start-up on Windows (1-epoch probes)
+- Status: done (diagnosis; follows the 2026-10-29 peak-VRAM entry, which left the low utilisation undiagnosed)
+- Done: 1-epoch probes of `rfdetr_small_rtx5070.yaml` on a fixed 960-image subset of `data/processed/coco` (seed 0; 64 valid, `run_test: false`, hard-linked into git-ignored `runs/bench_data`), batch 4 x accum 4, changing only `num_workers`. A game was holding the GPU during the first probes; it was closed for the rows below and the result did not change
+- Verify: time of the train phase (log line "Building ... train dataset" to "Skipping validation"): `num_workers` 8 -> 293 / 313 / 319 s (3 runs), 4 -> 144 s, 2 -> 98 s, 0 -> 52 s. Peak GPU memory 5.9-6.1 GB in all cases. Batch 8 x accum 2 with 8 workers -> 274 s (not significant vs. 293-319 s). With 8 workers GPU util averages 6% and CPU 22%, so neither is the limit: the time is a start-up cost that grows with the worker count (about 25-35 s per worker, consistent with Windows `spawn` re-importing torch/rfdetr in each worker)
+- MLflow run / DVC rev: runs `bench-*` (experiment vehicle-detect); `git_dirty=true`, do not count under D-017
+- Decisions: none
+- Notes for next session: this measures start-up, not steady state. `persistent_workers` is on by default, so the cost is paid once per run, not per epoch (the 2-epoch run's 2nd epoch took ~215 s with 8 workers incl. val). The earlier "38% average GPU utilisation" came from a 1-epoch run that included this start-up, so it overstated the problem. Do not change `num_workers` in the config yet: first compare steady-state epoch time (3-epoch run, epochs 2-3) for `num_workers` 8 vs 2 vs 0, since 0 moves decoding into the main process and may be slower per epoch
+
+### 2026-11-10 — steady-state epoch time vs num_workers (3-epoch probes, 960-image subset)
+- Status: done (measurement; follows the 2026-11-09 start-up entry)
+- Done: same subset and config as the 2026-11-09 probes, `epochs: 3`, only `num_workers` changed (8, 2, 0). Steady-state epoch time = gap between the "Best EMA metric improved" log lines of consecutive epochs (train + val of 64 images)
+- Verify: `num_workers` 8 -> first epoch done after 240 s, then 33 s per epoch; 2 -> first epoch after 85 s, then 31 s per epoch; 0 -> first epoch after ~41 s, then 40 s per epoch. Peak GPU memory 5.8-5.9 GB. Mean GPU util over the whole run 13.5% (8) / 29% (2) / 34% (0); mean CPU 23% / 36% / 46%. So the per-epoch speed is the same for 8 and 2 workers (about 30 images/s, matching the full-data 2-epoch run), and 0 workers is ~25% slower per epoch but has no start-up cost
+- MLflow run / DVC rev: runs `bench-ep3_*`; `git_dirty=true`, do not count under D-017
+- Decisions: none
+- Notes for next session: the ~2.5 min saved by 2 workers at start is ~1.5% of a 50-epoch run, so `num_workers: 8` in `rfdetr_small_rtx5070.yaml` was left unchanged; use `num_workers: 2` for short probes and smoke runs. One run per setting, subset only, so differences under ~10% are within noise. Low GPU utilisation is therefore not a data-loading problem; the 5070 is simply not saturated at batch 4 (peak 6 GB of 12): the next single change to try is `batch_size: 8` + `grad_accum_steps: 2` over a full epoch
+
+### 2026-11-10 — batch 8 x accum 2 vs batch 4 x accum 4, one full epoch (6,568 images, 8 workers)
+- Status: done (measurement; single change vs. the config, as in the 2026-11-09/10 probes)
+- Done: `rfdetr_small_rtx5070.yaml` with `epochs: 1`, `run_test: false`, full `data/processed/coco`, only batch/accum changed; GPU idle beforehand (no game); both runs back to back
+- Verify: train phase (incl. ~4 min worker start-up with 8 workers) 414 s for batch 8 x 2 vs 435 s for batch 4 x 4 (-5%, within noise); whole command 509 s vs 484 s. Peak GPU memory **10,036 MiB vs 6,153 MiB** (of 12,227). Mean GPU util 25% vs 27%. Epoch-1 val EMA mAP50-95 0.532 vs 0.527, train loss 5.79 vs 5.73 (same effective batch 16, so no difference expected)
+- MLflow run / DVC rev: runs `bench-full_b8a2`, `bench-full_b4a4`; `git_dirty=true`, do not count under D-017
+- Decisions: none
+- Notes for next session: batch 8 gives no speed-up but leaves only ~2 GB free, so `rfdetr_small_rtx5070.yaml` stays at batch 4 x accum 4. Mean GPU util is 25-27% in both because the 4 min start-up is included; the GPU is not the limit of a 1-epoch run, and for the 50-epoch run the start-up is amortised. Next lever, if epoch time matters, is not batch size (try resolution / `amp` only with an MLflow-compared run)
+
+### 2026-11-13 — phase-3-g: version data with DVC
+- Status: done
+- Done: `dvc add data/raw` -> `data/raw.dvc` (md5 `a3d359377f43a482856162129440d914.dir`, 8,511 files, 720,825,243 bytes); `dvc push` to the local remote `C:/Users/tommy/dvc-store` (8,481 unique objects, 707 MB). `.gitignore` changed from `/data/` to `/data/*` + `!/data/*.dvc` + `!/data/.gitignore`: DVC refuses a `.dvc` file that git ignores, and the contents of `data/` stay ignored. The remote is machine-local (`.dvc/config.local`, `make dvc-init` equivalent run by hand with the Windows path, `uv run --no-sync dvc remote add -d storage C:/Users/tommy/dvc-store --local`). `data/processed` and `data/samples` are not tracked (they are derived / bench-demo only)
+- Verify: `uv run dvc status -c data/raw.dvc` -> "Cache and remote 'storage' are in sync."; `dvc status data/raw.dvc` -> "Data and pipelines are up to date."; `git log -- data/raw.dvc` shows this commit. The first plain `dvc push` printed "Everything is up to date" while the remote was still empty (0 bytes); a second `dvc push -v` transferred 8,481 files, which is what the numbers above are from
+- MLflow run / DVC rev: n/a; DVC data rev for lineage (D-017) = `data/raw.dvc` at this commit
+- Decisions: none
+- Notes for next session: `uv sync --all-groups` then `uv run --no-sync ...` (plain `uv run` syncs only `dev` and may remove `dvc`); `orjson` had to be reinstalled (`--reinstall-package orjson`) after the earlier "Access is denied". The camera-level leak (MIO-TCD views shared between train and valid/test) is a `prepare` / split change, so it does not alter `data/raw` and can still be fixed after this; it would need a new sub-task, then a train whose lineage counts under D-017 (clean tree + `dvc_data_rev`)

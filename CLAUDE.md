@@ -2,8 +2,8 @@
 
 Real-time vehicle detection + classification (9 Thai traffic classes). Hard target: **≥ 60 FPS
 end-to-end** (decode → detect → track) on the target device, p99 frame time ≤ 16.7 ms.
-Machines: dev = MacBook (Apple Silicon, MPS); train + target device = **RTX 5070 12 GB PC under WSL2 Ubuntu,
-CUDA 13 / torch cu130** (D-013, D-014). DVC remote = local disk / NAS (D-015).
+Machines: dev = MacBook (Apple Silicon, MPS); train + target device = **RTX 5070 12 GB PC, native Windows,
+CUDA 13 / torch cu130; `make` runs in Git Bash** (D-019 supersedes D-013 WSL2; D-014). DVC remote = local disk / NAS (D-015).
 This is also a learning project for the full ML lifecycle, so explain reasoning briefly when it
 teaches something. Reply in the user's language (usually Thai); keep code, comments and commits in English.
 

@@ -2,8 +2,8 @@
 
 Real-time vehicle detection + classification (9 Thai traffic classes). Hard target: **≥ 60 FPS
 end-to-end** (decode → detect → track) on the target device, p99 frame time ≤ 16.7 ms.
-Machines: dev = MacBook (Apple Silicon, MPS); train + target device = **RTX 5070 12 GB PC under WSL2 Ubuntu,
-CUDA 13 / torch cu130** (D-013, D-014). DVC remote = local disk / NAS (D-015).
+Machines: dev = MacBook (Apple Silicon, MPS); train + target device = **RTX 5070 12 GB PC, native Windows,
+CUDA 13 / torch cu130; `make` runs in Git Bash** (D-019 supersedes D-013 WSL2; D-014). DVC remote = local disk / NAS (D-015).
 This is also a learning project for the full ML lifecycle, so explain reasoning briefly when it
 teaches something. Reply in the user's language (usually Thai); keep code, comments and commits in English.
 
@@ -124,8 +124,8 @@ or `make repro` (DVC, re-runs changed stages only).
   not a real export — `phase-4-b` adds a parity test against `model.predict()`.
 - `uv.lock` must be generated on a machine that can reach the PyTorch CUDA index (`cu130`).
   Never switch the index to cu128/cu126: PyTorch 2.14 dropped cu128, and cu126 has no sm_120 (RTX 50xx) kernels.
-- RTX 5070 training configs (`configs/train/*_rtx5070.yaml`) have not run on real hardware yet; record
-  peak VRAM and s/epoch in `PROGRESS.md` the first time they do.
+- RTX 5070 Small config ran on real hardware (2026-10-29, PROGRESS.md): peak 6.4 GB of 12 GB, no OOM.
+  The Medium config (`rfdetr_medium_rtx5070.yaml`) has not run yet; record its peak VRAM and s/epoch when it does.
 - Don't run `make bench` while a training job is using the same GPU — the result is invalid.
 - `evidently` (extra `monitor`) and `fiftyone` (group `data`) conflict on plotly; they're declared as
   conflicting in `pyproject.toml` and must live in separate environments.

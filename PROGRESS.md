@@ -10,11 +10,11 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-29 · by: Claude (phase-3-e Label QA done)
+> Last updated: 2026-10-29 · by: Claude (moved the RTX 5070 PC from WSL2 to native Windows, D-019)
 
 | Field | Value |
 |---|---|
-| Current phase | phase-3 — Data (now on the RTX 5070 PC, WSL2) |
+| Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
 | Current sub-task | **phase-3-f**: own Thai footage + pre-label (deferred, D-016) or phase-3-g: `dvc add` the data |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
 | Last done | phase-3-e: duplicates across splits = 0 after dedup in `prepare`; camera-level leak recorded (`docs/label_issues.md`) |
@@ -29,7 +29,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 | ruff check / format | ✅ pass (project ruff via uv; an older ruff had missed 2 E501 + 1 format diff in convert.py) | 2026-10-20 |
 | `./init.sh` (WSL2) | ✅ OK | 2026-10-21 |
 | `uv sync --all-groups` | ✅ pass (Mac, Python 3.13 venv) | 2026-10-20 |
-| `make gpu-check` (RTX 5070) | ✅ OK, sm_120, bf16 True | 2026-10-21 |
+| `make gpu-check` (RTX 5070, native Windows) | ✅ OK, torch 2.14.1+cu130, sm_120, bf16 True | 2026-10-29 |
 | ruff + pytest `-m "not gpu"` (Mac, development @ f8cffa1) | ✅ clean, 30 passed | 2026-10-26 |
 
 ### Key metrics (best so far)
@@ -48,7 +48,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 | Model candidate | — (planned: RF-DETR Small, trained on RTX 5070 with bf16) |
 | Production model | — |
 | Dataset version (DVC) | — (remote: local disk / NAS `~/dvc-store`, D-015) |
-| Target device | RTX 5070 12 GB PC, WSL2 Ubuntu 24.04, CUDA 13 / driver ≥ 580 (D-013, D-014) |
+| Target device | RTX 5070 12 GB PC, native Windows (driver 617.14), CUDA 13 / torch cu130 (D-019, D-014) |
 | Real Thai footage | none yet; use public data + freely licensed clips (D-016) |
 
 ### Open questions for the user
@@ -335,3 +335,11 @@ Template (copy it for each entry):
 - MLflow run / DVC rev: n/a
 - Decisions: none
 - Notes for next session: the camera-level leak should be fixed before phase 5 reports any metric on pickup/van (e.g. a pseudo `camera_id` from clustering the dHash / thumbnails of MIO-TCD, then `group_by: camera_id`); decide with the user whether to do it before or after phase-3-g. Re-run `vd-qa` after every `make prepare`. `vd-qa` flags MAD <= 3 as duplicate, so two empty-road frames from one camera at the same light can be dropped from valid/test too (conservative; train is never touched)
+
+### 2026-10-29 — move the RTX 5070 PC from WSL2 to native Windows (D-019)
+- Status: done (setup; not a PLAN.md sub-task, requested by the user)
+- Done: `pyproject.toml` adds `win32` to `tool.uv.environments` and routes torch / torchvision to the `cu130` index and `onnxruntime-gpu` to `win32`; `uv.lock` re-resolved (389 packages, adds pywin32 / pywinpty / waitress). `Makefile`: on Windows `SHELL` is Git Bash and `HOME` comes from `USERPROFILE`; `NVIDIA_SMI` points to `C:/Windows/Sysnative/nvidia-smi.exe` because the chocolatey `make` is 32-bit and cannot see `nvidia-smi.exe` in System32. `.gitattributes`: `* text=auto eol=lf` (the Windows working copy had CRLF, which broke `init.sh`; converted in place). `data/raw` and `data/samples` copied from the WSL clone (8,511 files, same count). `make setup` installed pre-commit and the `nbstripout` filter on Windows (before this, a commit from this clone could have put notebook outputs into git). D-013 is Superseded by D-019; `CLAUDE.md` machine line updated
+- Verify: `make gpu-check` -> torch 2.14.1+cu130, RTX 5070 11.9 GB sm_120, bf16 supported: True, OK: CUDA kernels run on this GPU. `./init.sh` (Git Bash) -> `OK — environment is clean` (ruff, 38 tests). `make prepare` on Windows reproduces the WSL result exactly: train 6,568 / valid 796 / test 791, dedup valid 25 / test 30
+- MLflow run / DVC rev: n/a
+- Decisions: D-019 (Accepted, decided by the user)
+- Notes for next session: a Jupyter kernel started from this `.venv` locks `pandas` and makes `uv sync` fail with "Access is denied"; stop the kernel first. `uv run` syncs only the `dev` group, so after `uv sync --all-groups` a plain `uv run` may uninstall a couple of data-group packages and reinstall them; use `uv sync --all-groups` before notebook / FiftyOne work. Still unverified on Windows: a real `make train-5070` (peak VRAM, s/epoch, DataLoader workers use spawn), TensorRT, `onnxruntime-gpu` with CUDA 13 (phase-6). The WSL clone (`~/object-detection-workshop` in the Ubuntu distro) is untouched and can be removed by the user when they no longer need it; it also holds `data/processed` and an 8.4 GB `data/_downloads` cache

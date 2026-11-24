@@ -43,6 +43,7 @@ def postprocess(
 
     RF-DETR is NMS-free: take sigmoid scores, top-k over (query, class) pairs, threshold.
     Only the first `num_classes` logit columns are used (drops the background slot).
+    Boxes are clipped to the image, as `RFDETR.predict()` does (phase-4-b parity).
     """
     scores = 1.0 / (1.0 + np.exp(-logits[:, :num_classes]))
     flat = scores.reshape(-1)
@@ -54,6 +55,8 @@ def postprocess(
     h, w = image_hw
     cx, cy, bw, bh = boxes_cxcywh[query].T
     xyxy = np.stack([(cx - bw / 2) * w, (cy - bh / 2) * h, (cx + bw / 2) * w, (cy + bh / 2) * h], 1)
+    xyxy[:, [0, 2]] = xyxy[:, [0, 2]].clip(0, w)  # model.predict() clips to the image; so must we
+    xyxy[:, [1, 3]] = xyxy[:, [1, 3]].clip(0, h)
     return sv.Detections(
         xyxy=xyxy.astype(np.float32).reshape(-1, 4),
         confidence=flat[idx].astype(np.float32),

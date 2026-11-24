@@ -10,14 +10,14 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-10-29 · by: Claude (moved the RTX 5070 PC from WSL2 to native Windows, D-019)
+> Last updated: 2026-11-17 · by: Claude (phase-4-d: smoke pipeline)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
-| Current sub-task | **phase-3-f**: own Thai footage + pre-label (deferred, D-016) or phase-3-g: `dvc add` the data |
+| Current sub-task | **phase-4-e**: counting demo |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-e: duplicates across splits = 0 after dedup in `prepare`; camera-level leak recorded (`docs/label_issues.md`) |
+| Last done | phase-4-d: `make repro-smoke` runs subset -> train -> export -> evaluate -> bench to exit 0 on a 500-image subset (2 epochs) |
 | Next up | phase-3-g (`dvc add data/raw` + processed) → phase 4 (baseline, parity test, overfit one batch); phase-3-f when footage exists (it would close the tuk_tuk / songthaew gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
@@ -36,7 +36,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 | Metric | Target | Best | MLflow run / DVC rev |
 |---|---|---|---|
-| test mAP50-95 (9 classes) | > baseline phase-4-a | — | — |
+| test mAP50-95 (5 COCO classes, pretrained, no training; 808-image test split after the leak fix) | > baseline phase-4-a | 0.568 strict / 0.565 merged | `reports/baseline_pretrained.json` (git-ignored), code `src/vehicle_detect/baseline.py` |
 | Count accuracy vs manual count | ≥ 95% (confirm in phase-2-a) | — | — |
 | End-to-end FPS (target device) | ≥ 60 | — | — |
 | p99 frame time | ≤ 16.7 ms | — | — |
@@ -384,3 +384,52 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: runs `bench-full_b8a2`, `bench-full_b4a4`; `git_dirty=true`, do not count under D-017
 - Decisions: none
 - Notes for next session: batch 8 gives no speed-up but leaves only ~2 GB free, so `rfdetr_small_rtx5070.yaml` stays at batch 4 x accum 4. Mean GPU util is 25-27% in both because the 4 min start-up is included; the GPU is not the limit of a 1-epoch run, and for the 50-epoch run the start-up is amortised. Next lever, if epoch time matters, is not batch size (try resolution / `amp` only with an MLflow-compared run)
+
+### 2026-11-13 — phase-3-g: version data with DVC
+- Status: done
+- Done: `dvc add data/raw` -> `data/raw.dvc` (md5 `a3d359377f43a482856162129440d914.dir`, 8,511 files, 720,825,243 bytes); `dvc push` to the local remote `C:/Users/tommy/dvc-store` (8,481 unique objects, 707 MB). `.gitignore` changed from `/data/` to `/data/*` + `!/data/*.dvc` + `!/data/.gitignore`: DVC refuses a `.dvc` file that git ignores, and the contents of `data/` stay ignored. The remote is machine-local (`.dvc/config.local`, `make dvc-init` equivalent run by hand with the Windows path, `uv run --no-sync dvc remote add -d storage C:/Users/tommy/dvc-store --local`). `data/processed` and `data/samples` are not tracked (they are derived / bench-demo only)
+- Verify: `uv run dvc status -c data/raw.dvc` -> "Cache and remote 'storage' are in sync."; `dvc status data/raw.dvc` -> "Data and pipelines are up to date."; `git log -- data/raw.dvc` shows this commit. The first plain `dvc push` printed "Everything is up to date" while the remote was still empty (0 bytes); a second `dvc push -v` transferred 8,481 files, which is what the numbers above are from
+- MLflow run / DVC rev: n/a; DVC data rev for lineage (D-017) = `data/raw.dvc` at this commit
+- Decisions: none
+- Notes for next session: `uv sync --all-groups` then `uv run --no-sync ...` (plain `uv run` syncs only `dev` and may remove `dvc`); `orjson` had to be reinstalled (`--reinstall-package orjson`) after the earlier "Access is denied". The camera-level leak (MIO-TCD views shared between train and valid/test) is a `prepare` / split change, so it does not alter `data/raw` and can still be fixed after this; it would need a new sub-task, then a train whose lineage counts under D-017 (clean tree + `dvc_data_rev`)
+
+### 2026-11-16 — phase-4-a: COCO-pretrained baseline (no training)
+- Status: done
+- Done: `src/vehicle_detect/baseline.py` (+ `tests/test_baseline.py`) runs the stock RF-DETR Small (COCO weights, 90 classes, threshold 0.01) on `data/processed/coco/test` (791 images, 2,632 boxes) and maps COCO bicycle/car/motorcycle/bus/truck onto our taxonomy. pickup, van, tuk_tuk and songthaew have no COCO class. Run: `uv run --no-sync python -m vehicle_detect.baseline`. Two ground-truth views: `strict` drops pickup/van boxes (a COCO "car" on a pickup is a false positive), `merged` relabels pickup/van as car
+- Verify: mAP50-95 per COCO-known class (strict): car 0.503, bus 0.796, truck 0.291, motorcycle 0.566, bicycle 0.480; overall 0.527 (mAP50 0.722). merged: car 0.519, rest identical, overall 0.530 (mAP50 0.728). `ruff check` / `ruff format --check` clean, `pytest` all pass
+- MLflow run / DVC rev: n/a (inference only; the JSON is in git-ignored `reports/`)
+- Decisions: none
+- Notes for next session: this is the bar a trained model must clear on the same 5 classes; the 2-epoch smoke fine-tune scored test mAP50-95 0.599 over 7 classes, which is not comparable (different class set) and is inflated by the camera-level leak. Test GT has 287 pickup + 59 van boxes that the baseline cannot name, so the real 9-class gap is larger than 0.527 suggests; tuk_tuk / songthaew have no test boxes at all (phase-3-c gap). `truck` is the weakest class (0.29): COCO "truck" vs our truck/pickup/van boundary. Next: phase-4-b (ONNX parity test, needs an ONNX export of the model)
+
+### 2026-11-17 — phase-4-b: ONNX parity test
+- Status: done
+- Done: exported the 2-epoch smoke checkpoint to ONNX (fp32, batch 1; outputs `dets` 1x300x4 and `labels` 1x300x10 = 9 classes + background slot, as `postprocess` assumes) and compared `OnnxDetector` with `RFDETR.predict()` on 10 test images (every 79th, conf >= 0.5, 28 reference detections). First run: 27/28 matched, 1 miss at IoU 0.9875 on a tiny box touching the left edge: the ONNX box had x1 = -0.4 while `predict()` clips to 0. Everything else agreed within 0.03 px. Fix: `postprocess` clips boxes to the image. Float-before-resize in `preprocess` was tried and did not change the miss, so `preprocess` is unchanged
+- Verify: `uv run pytest -m slow tests/test_parity.py` -> passed (every reference detection has an ONNX box with IoU >= 0.99 and the same class; equal detection counts per image). `pytest -m "not slow and not gpu"` -> all pass (41), `ruff check` / `ruff format --check` clean. New CPU test `test_postprocess_clips_boxes_to_the_image`
+- MLflow run / DVC rev: n/a
+- Decisions: none
+- Notes for next session: `tests/test_parity.py` is marked `slow` (marker added to `pyproject.toml`); it skips when no `runs/*/checkpoint_best_total.pth` or no `data/processed/coco/test` exists, and `PARITY_CHECKPOINT` picks a checkpoint. It ran on the CUDA execution provider, not CPU. On native Windows the TensorRT provider fails to load (`nvinfer_10.dll` missing) and ONNX Runtime falls back to CUDA: TensorRT must be installed before phase-6 (D-019 risk list). The checkpoint used was the 2-epoch smoke one, which is enough for parity but says nothing about accuracy
+
+### 2026-11-17 — camera-level leak: pseudo camera ids for MIO-TCD, baseline re-measured (follow-up to phase-3-e)
+- Status: done (not a PLAN.md sub-task; the leak was recorded in phase-3-e and is a precondition for a train that counts under D-017)
+- Done: `qa.assign_scene_ids` gives every MIO-TCD image a pseudo `camera_id` before `group_split`, enabled by `split.scene_cluster_sources: [mio_tcd]` in `configs/data/thai_traffic.yaml`; `vd-prepare` calls it and prints `[scenes] N pseudo camera ids`. Two metrics were tried and rejected on visual evidence: (1) dHash <= 6 single-link (1,192 groups) left real same-camera pairs across splits: 8 of 8 sampled pairs at dHash 7-8 were one camera (a large vehicle changes enough hash bits); (2) 70% pixel match on a 32x24 thumbnail (399 groups) still missed the same camera at another hour or at night. Final metric: sign of (64x48 grayscale - Gaussian blur) where contrast exists, score = (agreeing - disagreeing) / (pixels with an edge in either) >= 0.4, single-link. On the 5,000 MIO images: 208 groups, largest 403 (8%); 0.5 gives 332 groups with the same largest group, 0.3 chains into one 3,488-image group, so 0.4 sits on a stable plateau. 8 of 8 pairs joined only between 0.4 and 0.5 were one camera (incl. night frames)
+- Verify: `make prepare`-equivalent (`uv run --no-sync vd-prepare`) -> train 6,581 / valid 821 / test 808 images (was 6,568 / 796 / 791). `vd-qa`: duplicate pairs across splits 0; same-scene pairs (dHash <= 4) across splits **2** (was 5,412; valid 1 image, test 0, was 286 and 306), the 2 being a COCO still vs MIO frames (different datasets). At the looser dHash <= 8: 207 pairs (was 707 after the first attempt), but 8 of 8 sampled remaining mio-mio pairs are different cameras, so they are dHash false positives. Class counts after the split: valid and test still have all 7 classes with data, tuk_tuk 36 / songthaew 27 remain train-only. `pytest -m "not slow and not gpu"` all pass (42); ruff clean on the touched files. Baseline re-run on the 808-image test split: strict mAP50-95 0.568 (car 0.499, bus 0.793, truck 0.420, motorcycle 0.605, bicycle 0.522), merged 0.565
+- MLflow run / DVC rev: n/a. `data/processed` is not DVC-tracked (derived; `data/raw` is, phase-3-g)
+- Decisions: none
+- Notes for next session: the baseline moved from 0.527 to 0.568 only because the test images changed (truck 0.29 -> 0.42), so any comparison must name the split it was measured on; the 2-epoch smoke runs and their 0.599 were trained and tested on the old, leaky split and are obsolete. The leak is removed by construction for the MIO-TCD view metric, but the metric cannot see a camera that changes its framing; it is checked by sampling (16 pairs by eye), not proven. Roboflow (clip ids) and visaitech (video ids) already had camera ids; COCO stills are not from fixed cameras. `docs/label_issues.md` was regenerated by `vd-qa`. The scene features are recomputed on every prepare (about 35 s for 5,000 images)
+
+### 2026-11-17 — phase-4-c: overfit one batch
+- Status: done
+- Done: `vehicle_detect.data.subset` (new, tested; also for phase-4-d) writes 16 random train images (seed 0, 53 boxes: car 27, bus 14, pickup 6, bicycle 2, truck 4) as train, valid and test (`--same`) into `data/processed/overfit16`. `configs/train/overfit16.yaml`: RF-DETR Small, batch 4 x accum 1 (4 optimizer steps per epoch), lr 1e-4, 100 epochs, no early stopping, `num_workers: 0`, bf16, default augmentation, run name `overfit-16`. Run: `uv run vd-train --config configs/train/overfit16.yaml`
+- Verify: exit 0; val mAP50 on the same 16 images: 0.052 (epoch 0), 0.839 (10), **0.987 (20)**, 0.997 (40), 1.000 from epoch 60 to 99, for both the regular and the EMA weights (criterion: >= 0.95). Train loss 8.65 (epoch 0) -> 2.26 (epoch 99): it is still falling and is not near 0, so the PLAN goal wording "loss near 0" is not literally met; the loss includes the auxiliary decoder losses and is computed on augmented images, while the mAP is computed on the clean images. The Verify criterion (mAP50 >= 0.95) is the one used. `pytest -m "not slow and not gpu"` passes, ruff clean on the new files
+- MLflow run / DVC rev: `overfit-16` (id `eb830f9ccf90403c8e7aa8f066e82a8e`, experiment vehicle-detect); tags `git_sha=82a8db1`, `git_dirty=true`, `dvc_data_rev=unknown`, so it does not count under D-017 (a throw-away sanity run); checkpoint not logged as an artifact
+- Decisions: none
+- Notes for next session: the pipeline can fit labelled data, so the labels, class mapping and COCO conversion are consistent with the model's outputs; this does not prove generalisation. If phase-4-d or later shows a flat loss, the data path is not the first suspect any more. `runs/overfit16` and `data/processed/overfit16` are git-ignored
+
+### 2026-11-17 — phase-4-d: smoke run of the whole pipeline
+- Status: done (with one deviation from the PLAN wording, below)
+- Done: `pipelines/smoke/dvc.yaml` (own `dvc.lock`, tracked): `subset` (500 train / 100 valid / 100 test from `data/processed/coco`, `vehicle_detect.data.subset`) -> `train` (`configs/train/smoke.yaml`, 2 epochs, `num_workers: 2`) -> `export` (`configs/export/smoke.yaml`, ONNX fp32) -> `evaluate` -> `bench` (`configs/bench/smoke.yaml`, 200 frames of one Pixabay clip, gate disabled: `target_fps: 0`). All outputs go to `runs/smoke`, `models/smoke_export`, `reports/smoke/`, `data/processed/smoke`, so the real pipeline paths are untouched. `make repro-smoke` = `uv run --no-sync dvc repro pipelines/smoke/dvc.yaml` (`--no-sync`: a plain `uv run` syncs only the dev group and would uninstall dvc mid-run). `evaluate.py` reads an optional `eval_report_path`. Two real defects found by the run and fixed: (1) `OnnxDetector` could not use the CUDA provider in a process that had not imported torch (`cudnn64_9.dll` LoadLibrary failed), so `vd-evaluate`, `vd-bench`, `vd-count` all failed on Windows; it now calls `onnxruntime.preload_dlls()` when the CUDA provider is present; (2) `configs/bench/realtime.yaml` pointed at `models/export/inference_model.onnx` but `vd-export` writes `rfdetr-small.onnx`
+- Verify: `make repro-smoke` -> exit 0 (first attempt failed at `evaluate` on the cuDNN defect; after the fix `dvc repro` skipped the unchanged `subset`/`train`/`export` and ran `evaluate` and `bench`). `reports/smoke/eval.json`: mAP50-95 0.235, mAP50 0.339 (100 test images, 2 epochs, so only a plumbing check). `reports/smoke/bench.json`: 200 frames, 66.7 FPS, p50 14.3 ms, p99 20.1 ms (decode 1.8, detect 13.1, track 0.05 ms), provider CUDAExecutionProvider (fp32, no TensorRT), so this is NOT the 60 FPS gate result: the gate is off in this config. `ruff check src tests`, `ruff format --check`, `pytest -m "not slow and not gpu"` all pass
+- Deviation: the PLAN Verify says `uv run dvc repro`; running that on the real `dvc.yaml` would re-run `prepare`, train 50 epochs on the full set and overwrite `data/processed/coco`, `runs/rfdetr_small_rtx5070` and `models/export`, which contradicts the Goal ("on a small subset, 2 epochs"). The same chain was run through the separate smoke pipeline instead, and the reports are `reports/smoke/eval.json` and `reports/smoke/bench.json` rather than `reports/eval.json` / `reports/bench.json` (DVC refuses two stages declaring one output). Say so if the literal paths matter
+- MLflow run / DVC rev: run `smoke-pipeline` (experiment vehicle-detect), `git_dirty=true`, does not count under D-017
+- Decisions: none
+- Notes for next session: the smoke `subset` stage deliberately has no dependency on `data/processed/coco` (it is an output of the real `prepare` stage and would make dvc re-run it); after a new `make prepare` run it with `dvc repro -f`. First end-to-end timing on the RTX 5070 with CUDA EP fp32: 66.7 FPS / p99 20.1 ms including a tracker; the p99 misses the 16.7 ms budget, TensorRT fp16 (phase-6) is the lever. The TensorRT provider still cannot load on this machine (`nvinfer_10.dll`)

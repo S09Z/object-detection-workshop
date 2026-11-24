@@ -1,0 +1,71 @@
+# phase-4-d smoke pipeline: the whole chain (subset -> train -> export -> evaluate -> bench) on a
+# tiny subset, 2 epochs. It proves the plumbing, not accuracy or speed. Separate from the real
+# pipeline in ../../dvc.yaml so it never touches data/processed/coco, runs/rfdetr_*, models/export
+# or reports/eval.json.
+#
+#   make repro-smoke        (= uv run --no-sync dvc repro pipelines/smoke/dvc.yaml)
+#
+# `uv run --no-sync`: a plain `uv run` syncs only the dev group and would uninstall dvc mid-run.
+# The subset stage has no dep on data/processed/coco on purpose (that is an output of the real
+# `prepare` stage and would make dvc re-run it first): after a new `make prepare`, use `dvc repro -f`.
+stages:
+  subset:
+    wdir: ../..
+    cmd: >-
+      uv run --no-sync python -m vehicle_detect.data.subset --out data/processed/smoke
+      --train 500 --valid 100 --test 100
+    deps:
+      - src/vehicle_detect/data/subset.py
+    outs:
+      - data/processed/smoke:
+          cache: false
+
+  train:
+    wdir: ../..
+    cmd: uv run --no-sync vd-train --config configs/train/smoke.yaml
+    deps:
+      - src/vehicle_detect/train.py
+      - src/vehicle_detect/models.py
+      - data/processed/smoke
+    params:
+      - configs/train/smoke.yaml:
+    outs:
+      - runs/smoke/checkpoint_best_total.pth:
+          cache: false
+
+  export:
+    wdir: ../..
+    cmd: uv run --no-sync vd-export --config configs/export/smoke.yaml
+    deps:
+      - src/vehicle_detect/export.py
+      - runs/smoke/checkpoint_best_total.pth
+    params:
+      - configs/export/smoke.yaml:
+    outs:
+      - models/smoke_export:
+          cache: false
+
+  evaluate:
+    wdir: ../..
+    cmd: uv run --no-sync vd-evaluate --config configs/bench/smoke.yaml
+    deps:
+      - src/vehicle_detect/evaluate.py
+      - src/vehicle_detect/inference.py
+      - models/smoke_export
+      - data/processed/smoke/test
+    metrics:
+      - reports/smoke/eval.json:
+          cache: false
+
+  bench:
+    wdir: ../..
+    cmd: uv run --no-sync vd-bench --config configs/bench/smoke.yaml
+    deps:
+      - src/vehicle_detect/benchmark.py
+      - src/vehicle_detect/inference.py
+      - models/smoke_export
+    params:
+      - configs/bench/smoke.yaml:
+    metrics:
+      - reports/smoke/bench.json:
+          cache: false

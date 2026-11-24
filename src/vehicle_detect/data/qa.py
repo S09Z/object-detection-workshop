@@ -18,11 +18,12 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 SPLITS = ("train", "valid", "test")
 MAX_DIST = 4  # dHash bits (of 64)
 MAX_MAD = 3.0  # mean absolute grey-level difference on a 64x48 thumbnail
+SCENE_SAME = 0.4  # structure score at which two images show one camera view (see _scene_feature)
 _POPCOUNT = np.array([bin(i).count("1") for i in range(256)], dtype=np.uint8)
 
 
@@ -94,6 +95,57 @@ def drop_leaks(
             "annotations": [a for a in ds["annotations"] if a["image_id"] not in drop],
         }
     return out, removed
+
+
+def assign_scene_ids(coco: dict[str, Any], sources: list[str], same: float = SCENE_SAME) -> int:
+    """Give images of `sources` that have no `camera_id` a pseudo one per camera view.
+
+    For stills from fixed cameras with no camera id (MIO-TCD): two images are the same view when
+    their edge structure agrees (`_scene_feature`). Unlike a whole-image dHash or raw pixel
+    comparison it survives a different vehicle in the frame, day vs night and moving shadows,
+    which is how one camera ended up on both sides of the split (phase-3-e). Views are joined
+    single-link and used as `camera_id`, so `group_split` keeps one camera inside one split.
+    Reads `file_name` as a path (call before files are copied). Returns the number of views.
+    """
+    todo = [i for i in coco["images"] if i.get("source") in sources and "camera_id" not in i]
+    if not todo:
+        return 0
+    feats = np.stack([_scene_feature(img["file_name"]) for img in todo])
+    present = np.abs(feats)
+    n_present = present.sum(axis=1)
+    parent = list(range(len(todo)))
+
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for start in range(0, len(todo), 512):  # row blocks keep the score matrix small
+        rows = slice(start, start + 512)
+        union = n_present[rows, None] + n_present[None, :] - present[rows] @ present.T
+        score = (feats[rows] @ feats.T) / np.maximum(union, 1)
+        for r, c in zip(*np.nonzero(score >= same), strict=True):
+            if start + r < c:
+                parent[find(start + r)] = find(c)
+    scene_of: dict[int, int] = {}
+    for n, img in enumerate(todo):
+        img["camera_id"] = f"scene{scene_of.setdefault(find(n), len(scene_of)):05d}"
+    return len(scene_of)
+
+
+def _scene_feature(path: str | Path) -> np.ndarray:
+    """Edge-structure vector: sign of (64x48 grayscale - its blur) where contrast exists, else 0.
+
+    The score of two such vectors is agreeing minus disagreeing edge pixels over pixels where
+    either has an edge: about 0 for unrelated views, 0.4 or more for one camera.
+    """
+    with Image.open(path) as im:
+        small = im.convert("L").resize((64, 48), Image.Resampling.BILINEAR)
+    high_pass = np.asarray(small, dtype=np.float32) - np.asarray(
+        small.filter(ImageFilter.GaussianBlur(4)), dtype=np.float32
+    )
+    return (np.sign(high_pass) * (np.abs(high_pass) > 3)).ravel()
 
 
 def box_issues(coco: dict[str, Any]) -> list[tuple[str, int, str, str]]:
@@ -189,9 +241,9 @@ def render(res: dict[str, Any], limit: int = 200) -> str:
         f"- **Duplicate pairs across splits: {len(dup)}**",
         "  (`vd-prepare` removes them from valid/test)",
         f"- **Same-scene pairs across splits: {len(scene)}**: {sc['valid']} valid and {sc['test']}",
-        "  test images share a camera view with some train image. Only MIO-TCD is affected",
-        "  (it has no camera id), so its valid/test scores are optimistic. Fixing it needs a",
-        "  camera id (cluster by scene or read the burnt-in timestamp); not done here",
+        "  test images share a camera view with some train image. MIO-TCD has no camera id, so",
+        f"  `vd-prepare` clusters its images by edge structure (score >= {SCENE_SAME}) into a",
+        "  pseudo `camera_id` before splitting; a non-zero count here is the residual leak",
         f"- Pairs inside one split (harmless): {res['inside']}",
         "",
     ]

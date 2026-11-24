@@ -1,4 +1,4 @@
-model_path: models/export/inference_model.onnx
+model_path: models/export/rfdetr-small.onnx   # the file `vd-export` writes for model: small
 video: data/samples/intersection.mp4
 num_classes: 9
 threshold: 0.4

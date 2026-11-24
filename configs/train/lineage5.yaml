@@ -1,0 +1,33 @@
+# phase-4-f: checkpoint / resume / lineage drill (D-017). 5 epochs on the full dataset, stopped after
+# epoch 2 and resumed:
+#   uv run --no-sync vd-train --config configs/train/lineage5.yaml        (stop it after epoch 2)
+#   make train-resume TRAIN_CONFIG=configs/train/lineage5.yaml
+# Start from a clean git tree and a dvc.lock that has the `prepare` output, or the lineage tags
+# will read git_dirty=true / dvc_data_rev=unknown and the run does not count.
+model: small
+dataset_dir: data/processed/coco
+output_dir: runs/lineage_5ep
+epochs: 5
+batch_size: 4
+grad_accum_steps: 4
+lr: 1.0e-4
+early_stopping: false
+checkpoint_interval: 1          # one interval archive per epoch so pruning has something to prune
+
+seed: 42
+best_model_metric: map
+run_test: true
+keep_last_checkpoints: 2        # interval archives kept after training; best_* and last.ckpt never pruned
+log_checkpoint_artifact: true   # best checkpoint is copied into the MLflow run (artifact model/)
+
+train_kwargs:
+  amp_dtype: bf16
+  num_workers: 2                # same steady-state speed as 8, 2.5 min less start-up (PROGRESS 2026-11-10)
+  eval_batch_size: 8
+
+model_kwargs:
+  gradient_checkpointing: false
+
+mlflow:
+  experiment: vehicle-detect
+  run_name: lineage-5ep

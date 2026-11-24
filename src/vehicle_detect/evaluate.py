@@ -47,8 +47,8 @@ def main() -> None:
         },
         "per_condition_map50_95": {k: float(m.compute().map50_95) for k, m in by_condition.items()},
     }
-    out = Path("reports/eval.json")
-    out.parent.mkdir(exist_ok=True)
+    out = Path(cfg.get("eval_report_path", "reports/eval.json"))
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
 

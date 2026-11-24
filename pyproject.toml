@@ -118,4 +118,7 @@ docstring-code-format = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-markers = ["gpu: needs an NVIDIA GPU + TensorRT (run on self-hosted runner)"]
+markers = [
+    "gpu: needs an NVIDIA GPU + TensorRT (run on self-hosted runner)",
+    "slow: needs a trained checkpoint + processed test images; skipped when absent (run with -m slow)",
+]

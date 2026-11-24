@@ -102,7 +102,7 @@
   - Goal: วางแผนแหล่ง footage (กล้องตัวเอง / ลูกค้า / หน่วยงาน) หลังผ่าน `phase-2-c` แล้ว extract เฟรม, pre-label ด้วย SAM 3 / X-AnyLabeling แล้วตรวจด้วยคนใน CVAT หรือ Label Studio
   - Output: `data/raw/thai_cctv/` อย่างน้อย 1,000 รูป ครอบคลุม songthaew / tuk_tuk / pickup
   - Verify: ทุก class มี ≥ 100 box ที่คนตรวจแล้ว, เพิ่ม source ใน `source_mappings`
-- [ ] **phase-3-g** Version data ด้วย DVC
+- [x] **phase-3-g** Version data ด้วย DVC
   - Goal: `dvc add data/raw` แล้ว push ไป remote
   - Verify: `uv run dvc status -c` แสดงว่า in sync และ `git log` มี commit ของ `data/raw.dvc`
 
@@ -110,11 +110,11 @@
 
 > ให้ pipeline ทั้งเส้นรันได้ก่อน ยังไม่ต้องสนความแม่น
 
-- [ ] **phase-4-a** Pretrained baseline (ไม่ train)
+- [x] **phase-4-a** Pretrained baseline (ไม่ train)
   - Goal: RF-DETR pretrained COCO รันบน test set โดย map car/bus/truck/motorcycle/bicycle
   - Output: ค่า mAP baseline ใน `PROGRESS.md` (ตัวเลขที่ต้องเอาชนะ)
   - Verify: มีค่า mAP50-95 ต่อ class ที่ COCO รู้จัก
-- [ ] **phase-4-b** ONNX parity test
+- [x] **phase-4-b** ONNX parity test
   - Goal: ยืนยันว่า `inference.postprocess` ให้ผลเท่ากับ `model.predict()` (background slot, ลำดับ class, พิกัด box)
   - Output: `tests/test_parity.py` (mark `slow`) เทียบบนรูปตัวอย่าง 10 รูป
   - Verify: box IoU ≥ 0.99 และ class ตรงกันทุก detection ที่ conf ≥ 0.5

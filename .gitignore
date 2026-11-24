@@ -17,7 +17,9 @@ __pycache__/
 .claude/
 
 # Data, weights, runs: DVC only (never git). Raw frames may contain faces / plates (PDPA).
-/data/
+/data/*
+!/data/*.dvc
+!/data/.gitignore
 /models/*
 !/models/.gitkeep
 /runs/

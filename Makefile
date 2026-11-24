@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup dvc-init gpu-check lint fmt test download prepare prepare-commercial train train-5070 train-resume register export eval bench count serve mlflow repro notebook clean
+.PHONY: help setup dvc-init gpu-check lint fmt test download prepare prepare-commercial train train-5070 train-resume register export eval bench count serve mlflow repro repro-smoke notebook clean
 
 # Windows (RTX 5070 PC, D-019): recipes are POSIX shell, so run them in Git Bash.
 # 8.3 path because make cannot handle the space in "Program Files".
@@ -88,6 +88,9 @@ mlflow: ## MLflow UI on :5001 (override: MLFLOW_PORT=...)
 
 repro: ## Re-run the DVC pipeline (only changed stages)
 	uv run dvc repro
+
+repro-smoke: ## Whole pipeline on a 500-image subset, 2 epochs (phase-4-d); not the real run
+	uv run --no-sync dvc repro pipelines/smoke/dvc.yaml
 
 notebook: ## Start JupyterLab
 	uv run jupyter lab notebooks/

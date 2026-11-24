@@ -29,3 +29,14 @@ def test_postprocess_decodes_one_confident_box():
 def test_postprocess_empty_when_below_threshold():
     det = postprocess(np.zeros((10, 4)), np.full((10, 10), -10.0), (100, 100), 9, 0.5)
     assert len(det) == 0
+
+
+def test_postprocess_clips_boxes_to_the_image():
+    boxes = np.array([[0.0, 0.5, 0.2, 0.2], [1.0, 0.5, 0.2, 0.2]], dtype=np.float32)
+    logits = np.full((2, 10), -10.0, dtype=np.float32)
+    logits[:, 0] = 5.0
+
+    det = postprocess(boxes, logits, (100, 200), num_classes=9, threshold=0.5)
+
+    assert det.xyxy[:, 0].min() >= 0 and det.xyxy[:, 2].max() <= 200
+    assert det.xyxy[:, 1].min() >= 0 and det.xyxy[:, 3].max() <= 100

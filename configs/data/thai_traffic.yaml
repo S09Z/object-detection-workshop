@@ -53,3 +53,6 @@ split:
   seed: 42
   # Split by CAMERA / video, not by frame — frames from one clip leak across splits.
   group_by: camera_id
+  # Sources of fixed-camera stills with no camera id: cluster by scene into a pseudo camera_id
+  # (data/qa.py assign_scene_ids) so one camera view cannot sit in train and test (phase-3-e leak).
+  scene_cluster_sources: [mio_tcd]

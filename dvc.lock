@@ -1,0 +1,73 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: uv run vd-prepare --config configs/data/thai_traffic.yaml
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: a3d359377f43a482856162129440d914.dir
+      size: 720825243
+      nfiles: 8511
+    - path: src/vehicle_detect/data
+      hash: md5
+      md5: c4a0e5e16460e1f1139cf3b3e27ff0ee.dir
+      size: 60746
+      nfiles: 10
+    params:
+      configs/data/thai_traffic.yaml:
+        classes:
+        - car
+        - pickup
+        - van
+        - bus
+        - truck
+        - motorcycle
+        - bicycle
+        - tuk_tuk
+        - songthaew
+        source_mappings:
+          coco:
+            car: car
+            bus: bus
+            truck: truck
+            motorcycle: motorcycle
+            bicycle: bicycle
+          mio_tcd:
+            car: car
+            pickup_truck: pickup
+            work_van: van
+            bus: bus
+            articulated_truck: truck
+            single_unit_truck: truck
+            motorcycle: motorcycle
+            bicycle: bicycle
+            non-motorized_vehicle:
+            pedestrian:
+          roboflow_thai:
+            Car: car
+            truck: truck
+            bus: bus
+            motorcycle: motorcycle
+            van: van
+            taxi: car
+            pickup truck: pickup
+            songtaew: songthaew
+            Tuktuk: tuk_tuk
+        split:
+          train: 0.8
+          valid: 0.1
+          test: 0.1
+          seed: 42
+          group_by: camera_id
+          scene_cluster_sources:
+          - mio_tcd
+    outs:
+    - path: data/processed/coco
+      hash: md5
+      md5: 575ffd68829193b16982658170d15a3e.dir
+      size: 685214003
+      nfiles: 8213
+    - path: reports/data_stats.json
+      hash: md5
+      md5: e30b588eb2be533ff6a8a8c7b927162c
+      size: 782

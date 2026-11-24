@@ -1,0 +1,148 @@
+schema: '2.0'
+stages:
+  subset:
+    cmd: uv run --no-sync python -m vehicle_detect.data.subset --out 
+      data/processed/smoke --train 500 --valid 100 --test 100
+    deps:
+    - path: src/vehicle_detect/data/subset.py
+      hash: md5
+      md5: e85c5dbada444015a9ce5109a7ceafe8
+      size: 2633
+    outs:
+    - path: data/processed/smoke
+      hash: md5
+      md5: a505ae18a0137867615af2327d9c4fce.dir
+      size: 60203586
+      nfiles: 703
+  train:
+    cmd: uv run --no-sync vd-train --config configs/train/smoke.yaml
+    deps:
+    - path: data/processed/smoke
+      hash: md5
+      md5: a505ae18a0137867615af2327d9c4fce.dir
+      size: 60203586
+      nfiles: 703
+    - path: src/vehicle_detect/models.py
+      hash: md5
+      md5: 514f14f01a07baa3c0f544de016e6f98
+      size: 724
+    - path: src/vehicle_detect/train.py
+      hash: md5
+      md5: af5da14af9f777e6b324816bb23bf148
+      size: 5230
+    params:
+      configs/train/smoke.yaml:
+        batch_size: 4
+        best_model_metric: map
+        checkpoint_interval: 1
+        dataset_dir: data/processed/smoke
+        early_stopping: false
+        epochs: 2
+        grad_accum_steps: 4
+        keep_last_checkpoints: 2
+        log_checkpoint_artifact: false
+        lr: 0.0001
+        mlflow:
+          experiment: vehicle-detect
+          run_name: smoke-pipeline
+        model: small
+        model_kwargs:
+          gradient_checkpointing: false
+        output_dir: runs/smoke
+        run_test: false
+        seed: 42
+        train_kwargs:
+          amp_dtype: bf16
+          num_workers: 2
+          eval_batch_size: 8
+    outs:
+    - path: runs/smoke/checkpoint_best_total.pth
+      hash: md5
+      md5: 22263bc152a02ba953a88289061b6901
+      size: 127599029
+  export:
+    cmd: uv run --no-sync vd-export --config configs/export/smoke.yaml
+    deps:
+    - path: runs/smoke/checkpoint_best_total.pth
+      hash: md5
+      md5: 22263bc152a02ba953a88289061b6901
+      size: 127599029
+    - path: src/vehicle_detect/export.py
+      hash: md5
+      md5: 06d5b39e37323f2a7917881e59b22b87
+      size: 1005
+    params:
+      configs/export/smoke.yaml:
+        batch_size: 1
+        checkpoint: runs/smoke/checkpoint_best_total.pth
+        format: onnx
+        fp16: false
+        model: small
+        output_dir: models/smoke_export
+    outs:
+    - path: models/smoke_export
+      hash: md5
+      md5: 0547cf0f5580ec46a60513cc15c34324.dir
+      size: 121643966
+      nfiles: 1
+  evaluate:
+    cmd: uv run --no-sync vd-evaluate --config configs/bench/smoke.yaml
+    deps:
+    - path: data/processed/smoke/test
+      hash: md5
+      md5: 56f801253803e372030bff6db455a536.dir
+      size: 9058737
+      nfiles: 101
+    - path: models/smoke_export
+      hash: md5
+      md5: 0547cf0f5580ec46a60513cc15c34324.dir
+      size: 121643966
+      nfiles: 1
+    - path: src/vehicle_detect/evaluate.py
+      hash: md5
+      md5: 56c5951c80d946badb589412670792dc
+      size: 2130
+    - path: src/vehicle_detect/inference.py
+      hash: md5
+      md5: f92eb2b68edeb4ec4df14e1bf5c1c4a7
+      size: 3818
+    outs:
+    - path: reports/smoke/eval.json
+      hash: md5
+      md5: 3633c877005cb4ba91853902c27b539f
+      size: 416
+  bench:
+    cmd: uv run --no-sync vd-bench --config configs/bench/smoke.yaml
+    deps:
+    - path: models/smoke_export
+      hash: md5
+      md5: 0547cf0f5580ec46a60513cc15c34324.dir
+      size: 121643966
+      nfiles: 1
+    - path: src/vehicle_detect/benchmark.py
+      hash: md5
+      md5: 6d2b267cd21f3cdf1421febecc55bfe5
+      size: 3477
+    - path: src/vehicle_detect/inference.py
+      hash: md5
+      md5: f92eb2b68edeb4ec4df14e1bf5c1c4a7
+      size: 3818
+    params:
+      configs/bench/smoke.yaml:
+        eval_report_path: reports/smoke/eval.json
+        max_frames: 200
+        model_path: models/smoke_export/rfdetr-small.onnx
+        num_classes: 9
+        p99_budget_ms: 1000
+        report_path: reports/smoke/bench.json
+        target_fps: 0
+        test_dir: data/processed/smoke/test
+        threshold: 0.4
+        video: data/samples/112539-695117337.mp4
+        warmup_frames: 20
+        with_tracking: true
+    outs:
+    - path: reports/smoke/bench.json
+      hash: md5
+      md5: ec27408b28f2fc05fe638d70219e4ffb
+      size: 292

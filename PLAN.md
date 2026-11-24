@@ -102,7 +102,7 @@
   - Goal: วางแผนแหล่ง footage (กล้องตัวเอง / ลูกค้า / หน่วยงาน) หลังผ่าน `phase-2-c` แล้ว extract เฟรม, pre-label ด้วย SAM 3 / X-AnyLabeling แล้วตรวจด้วยคนใน CVAT หรือ Label Studio
   - Output: `data/raw/thai_cctv/` อย่างน้อย 1,000 รูป ครอบคลุม songthaew / tuk_tuk / pickup
   - Verify: ทุก class มี ≥ 100 box ที่คนตรวจแล้ว, เพิ่ม source ใน `source_mappings`
-- [ ] **phase-3-g** Version data ด้วย DVC
+- [x] **phase-3-g** Version data ด้วย DVC
   - Goal: `dvc add data/raw` แล้ว push ไป remote
   - Verify: `uv run dvc status -c` แสดงว่า in sync และ `git log` มี commit ของ `data/raw.dvc`
 
@@ -110,27 +110,27 @@
 
 > ให้ pipeline ทั้งเส้นรันได้ก่อน ยังไม่ต้องสนความแม่น
 
-- [ ] **phase-4-a** Pretrained baseline (ไม่ train)
+- [x] **phase-4-a** Pretrained baseline (ไม่ train)
   - Goal: RF-DETR pretrained COCO รันบน test set โดย map car/bus/truck/motorcycle/bicycle
   - Output: ค่า mAP baseline ใน `PROGRESS.md` (ตัวเลขที่ต้องเอาชนะ)
   - Verify: มีค่า mAP50-95 ต่อ class ที่ COCO รู้จัก
-- [ ] **phase-4-b** ONNX parity test
+- [x] **phase-4-b** ONNX parity test
   - Goal: ยืนยันว่า `inference.postprocess` ให้ผลเท่ากับ `model.predict()` (background slot, ลำดับ class, พิกัด box)
   - Output: `tests/test_parity.py` (mark `slow`) เทียบบนรูปตัวอย่าง 10 รูป
   - Verify: box IoU ≥ 0.99 และ class ตรงกันทุก detection ที่ conf ≥ 0.5
-- [ ] **phase-4-c** Overfit one batch
+- [x] **phase-4-c** Overfit one batch
   - Goal: train บน 16 รูป ให้ loss ลดเกือบ 0 (ถ้าทำไม่ได้แปลว่ามี bug ใน data/label)
   - Output: MLflow run `overfit-16`
   - Verify: train mAP50 บน 16 รูปนั้น ≥ 0.95
-- [ ] **phase-4-d** Smoke run ทั้ง pipeline
+- [x] **phase-4-d** Smoke run ทั้ง pipeline
   - Goal: `make repro` บน subset เล็ก (เช่น 500 รูป, 2 epoch) ผ่านทุก stage จนถึง `bench`
   - Output: `reports/eval.json`, `reports/bench.json` (บน Mac ได้ไม่ถึง 60 FPS ก็ได้ ยังไม่ใช่เป้า)
   - Verify: `uv run dvc repro` exit 0 จนถึง `evaluate` และ `bench` สร้าง report ได้
-- [ ] **phase-4-e** Counting demo แบบหยาบ
+- [x] **phase-4-e** Counting demo แบบหยาบ
   - Goal: `make count` บนคลิปทางแยกได้วิดีโอที่มี box + เส้นนับ
   - Output: `reports/count_demo.mp4`, `reports/counts.json`
   - Verify: เปิดวิดีโอดูด้วยตา track ID ไม่กระโดดจนผิดปกติ และนับได้ > 0 ทั้งสองทิศ
-- [ ] **phase-4-f** Checkpoint, resume และ lineage (D-017)
+- [x] **phase-4-f** Checkpoint, resume และ lineage (D-017)
   - Goal: train สั้นๆ (5 epoch) แล้วหยุดกลางคัน (Ctrl-C หลัง epoch 2) จากนั้น `make train-resume TRAIN_CONFIG=...`
   - Output: MLflow run ที่มี tag `git_sha`, `dvc_data_rev`, `sha256` และ artifact `model/`
   - Verify: run ที่ resume ทำต่อจาก epoch เดิม (ไม่เริ่ม epoch 0), `checkpoint_best_total.pth` โหลดได้

@@ -1,0 +1,7 @@
+# ONNX fp32 of the phase-4-f model (5 epochs, full data): the model the counting demo (phase-4-e) uses.
+checkpoint: runs/lineage_5ep/checkpoint_best_total.pth
+model: small
+output_dir: models/lineage5_export
+format: onnx
+fp16: false
+batch_size: 1

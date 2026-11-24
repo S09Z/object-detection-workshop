@@ -1,0 +1,28 @@
+# phase-4-d smoke run: 500 train images, 2 epochs. Proves the pipeline runs end to end.
+model: small
+dataset_dir: data/processed/smoke
+output_dir: runs/smoke
+epochs: 2
+batch_size: 4
+grad_accum_steps: 4
+lr: 1.0e-4
+early_stopping: false
+checkpoint_interval: 1
+
+seed: 42
+best_model_metric: map
+run_test: false
+keep_last_checkpoints: 2
+log_checkpoint_artifact: false
+
+train_kwargs:
+  amp_dtype: bf16
+  num_workers: 2         # Windows spawn: each worker costs ~25-35 s of start-up (PROGRESS 2026-11-09)
+  eval_batch_size: 8
+
+model_kwargs:
+  gradient_checkpointing: false
+
+mlflow:
+  experiment: vehicle-detect
+  run_name: smoke-pipeline

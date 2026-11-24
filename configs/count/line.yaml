@@ -1,10 +1,16 @@
-model_path: models/export/inference_model.onnx
-video: data/samples/intersection.mp4
+# phase-4-e rough counting demo: Pixabay clip 30949 (1080p, 25 fps, two-way road with a median).
+# Clip 23712 was tried first and rejected: it is time-lapsed (vehicles jump ~100 px per frame, no tracker can follow).
+# model = the 5-epoch phase-4-f export (configs/export/lineage5.yaml). Swap model_path for the
+# production export once phase-5 produces one. Pixabay clips are for demo / bench only (data/samples/SOURCES.md).
+model_path: models/lineage5_export/rfdetr-small.onnx
+video: data/samples/30949-383991398.mov
 output_video: reports/count_demo.mp4
 num_classes: 9
 threshold: 0.4
-# Counting line in pixel coords of the source video
-line_start: [100, 500]
-line_end: [1180, 500]
+# Counting line in pixel coords of the source video (1920x1080): across both carriageways, left to right
+# With the line drawn left to right, `in` = vehicles moving UP the image (away from the camera) and
+# `out` = moving DOWN (toward the camera); swap line_start / line_end to flip them.
+line_start: [0, 700]
+line_end: [1920, 700]
 minimum_crossing_threshold: 2    # frames on the new side before a crossing counts (filters jitter)
 report_path: reports/counts.json

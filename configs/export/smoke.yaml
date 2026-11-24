@@ -1,0 +1,7 @@
+# phase-4-d smoke export: portable ONNX, fp32 (the TensorRT / fp16 path is phase-6, on the target device)
+checkpoint: runs/smoke/checkpoint_best_total.pth
+model: small
+output_dir: models/smoke_export
+format: onnx
+fp16: false
+batch_size: 1

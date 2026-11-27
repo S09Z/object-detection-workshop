@@ -10,14 +10,14 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 ## 1. Current state
 
-> Last updated: 2026-11-13 · by: Claude (phase-3-g: `data/raw` versioned with DVC)
+> Last updated: 2026-11-16 · by: Claude (phase-4-a: COCO-pretrained RF-DETR Small baseline)
 
 | Field | Value |
 |---|---|
 | Current phase | phase-3 — Data (on the RTX 5070 PC, native Windows) |
-| Current sub-task | **phase-4-a**: pretrained baseline (phase-3-f stays deferred, D-016) |
+| Current sub-task | **phase-4-b**: ONNX parity test (phase-3-f stays deferred, D-016) |
 | Status | `not started` <!-- not started / in progress / blocked / done --> |
-| Last done | phase-3-g: `data/raw` tracked by `data/raw.dvc` (8,511 files, 720,825,243 bytes) and pushed to the local remote `~/dvc-store` |
+| Last done | phase-4-a: COCO-pretrained RF-DETR Small on the test split, mAP50-95 0.527 over the 5 COCO-known classes (the number to beat) |
 | Next up | phase-3-g (`dvc add data/raw` + processed) → phase 4 (baseline, parity test, overfit one batch); phase-3-f when footage exists (it would close the tuk_tuk / songthaew gap) |
 | Branch / last commit | development (workflow: commit + push per sub-task; feature branch from origin/development → draft PR to main) |
 | Blockers | none. Open draft PRs: #7 (iscrowd), #8 (MIO-TCD), #9 (phase-1-f), #10 (roboflow_thai); #4-#6 merged into main, development not yet rebased |
@@ -36,7 +36,7 @@ Decisions (the *why*) go in `DECISIONS.md`. This file records only *what* and *w
 
 | Metric | Target | Best | MLflow run / DVC rev |
 |---|---|---|---|
-| test mAP50-95 (9 classes) | > baseline phase-4-a | — | — |
+| test mAP50-95 (5 COCO classes, pretrained, no training) | > baseline phase-4-a | 0.527 strict / 0.530 merged | `reports/baseline_pretrained.json` (git-ignored), code `src/vehicle_detect/baseline.py` |
 | Count accuracy vs manual count | ≥ 95% (confirm in phase-2-a) | — | — |
 | End-to-end FPS (target device) | ≥ 60 | — | — |
 | p99 frame time | ≤ 16.7 ms | — | — |
@@ -392,3 +392,11 @@ vidia-smi.exe`, which a 64-bit Git Bash cannot see (Sysnative works only for 32-
 - MLflow run / DVC rev: n/a; DVC data rev for lineage (D-017) = `data/raw.dvc` at this commit
 - Decisions: none
 - Notes for next session: `uv sync --all-groups` then `uv run --no-sync ...` (plain `uv run` syncs only `dev` and may remove `dvc`); `orjson` had to be reinstalled (`--reinstall-package orjson`) after the earlier "Access is denied". The camera-level leak (MIO-TCD views shared between train and valid/test) is a `prepare` / split change, so it does not alter `data/raw` and can still be fixed after this; it would need a new sub-task, then a train whose lineage counts under D-017 (clean tree + `dvc_data_rev`)
+
+### 2026-11-16 — phase-4-a: COCO-pretrained baseline (no training)
+- Status: done
+- Done: `src/vehicle_detect/baseline.py` (+ `tests/test_baseline.py`) runs the stock RF-DETR Small (COCO weights, 90 classes, threshold 0.01) on `data/processed/coco/test` (791 images, 2,632 boxes) and maps COCO bicycle/car/motorcycle/bus/truck onto our taxonomy. pickup, van, tuk_tuk and songthaew have no COCO class. Run: `uv run --no-sync python -m vehicle_detect.baseline`. Two ground-truth views: `strict` drops pickup/van boxes (a COCO "car" on a pickup is a false positive), `merged` relabels pickup/van as car
+- Verify: mAP50-95 per COCO-known class (strict): car 0.503, bus 0.796, truck 0.291, motorcycle 0.566, bicycle 0.480; overall 0.527 (mAP50 0.722). merged: car 0.519, rest identical, overall 0.530 (mAP50 0.728). `ruff check` / `ruff format --check` clean, `pytest` all pass
+- MLflow run / DVC rev: n/a (inference only; the JSON is in git-ignored `reports/`)
+- Decisions: none
+- Notes for next session: this is the bar a trained model must clear on the same 5 classes; the 2-epoch smoke fine-tune scored test mAP50-95 0.599 over 7 classes, which is not comparable (different class set) and is inflated by the camera-level leak. Test GT has 287 pickup + 59 van boxes that the baseline cannot name, so the real 9-class gap is larger than 0.527 suggests; tuk_tuk / songthaew have no test boxes at all (phase-3-c gap). `truck` is the weakest class (0.29): COCO "truck" vs our truck/pickup/van boundary. Next: phase-4-b (ONNX parity test, needs an ONNX export of the model)
